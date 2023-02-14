@@ -2,17 +2,31 @@ body {
   background-color: #FFFFFF;
   color: #181818;
   font-family: Consolas;
-  font-size: 50px;
+  font-size: 20px;
   text-align: center;
 }
 
-.header {
+.index-header {
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+.index-body {
+
+
+}
+
 .login-dialog-box {
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  font-size: 25px;
+  background-color: #282828;
+  color: #FFFFFF;
+}
+
+.register-dialog-box {
   height: 100%;
   padding: 20px;
   text-align: center;
