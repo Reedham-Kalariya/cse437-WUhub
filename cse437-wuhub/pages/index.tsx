@@ -1,26 +1,16 @@
-import { ReactDOM } from "react"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+
+import { init_firebase } from '@/firebase/firebase-config';
 
 export default function Home() {
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDo1xAtUPq12Mfxc9KJyAafGLbH_o-Wyfk",
-    authDomain: "cse437-wuhub.firebaseapp.com",
-    projectId: "cse437-wuhub",
-    storageBucket: "cse437-wuhub.appspot.com",
-    messagingSenderId: "404778634504",
-    appId: "1:404778634504:web:3d87268e15b68c3a4e30bd",
-    measurementId: "G-ZPCL9Q4QED"
-  };
+  // initialize Firebase using the init_firebase function
+  const firebase = init_firebase();
 
-  // Initialize Firebase
-  const firebase = initializeApp(firebaseConfig);
-  const auth = getAuth(firebase);
+  // get an instance of the Auth object from the Firebase authentication SDK
+  const auth = getAuth();
 
   let currentUser = auth.currentUser;
 
