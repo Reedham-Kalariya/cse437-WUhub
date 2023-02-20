@@ -1,14 +1,24 @@
 // import the Firebase app initialization function
 import { init_firebase } from '@/firebase/firebase-config';
+import { init_firebase_storage } from '@/firebase/firebase-storage-config';
 
 // import the Firebase authentication SDK functions
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+// import the Firebase Firebase Storage SDK functions
+import { ref, getDownloadURL } from 'firebase/storage';
+
+// Firestore
+import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 
 // define the LoginPage functional component
 export default function LoginPage() {
 
     // initialize Firebase using the init_firebase function
     const firebase = init_firebase();
+
+    //initialize Firebase storage
+    const storage = init_firebase_storage();
 
     // get an instance of the Auth object from the Firebase authentication SDK
     const auth = getAuth();
@@ -50,27 +60,72 @@ export default function LoginPage() {
             });
     }
 
+    async function getImage() {
+        // const citiesRef = collection(), "cities");
+        const docRef = doc(storage, "events", "WILD");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            console.log(docRef)
+            console.log(docSnap.data())
+        } else {
+            console.log("no document!");
+        }
+
+
+
+        // const pathRef = ref(storage, '/items_spritesheet.png');
+        // getDownloadURL(pathRef)
+        //     .then((url) => {
+        //         console.log(url);
+        //     })
+        //     .catch((error) => {
+        //         // A full list of error codes is available at
+        //         // https://firebase.google.com/docs/storage/web/handle-errors
+        //         switch (error.code) {
+        //             case 'storage/object-not-found':
+        //                 // File doesn't exist
+        //                 break;
+        //             case 'storage/unauthorized':
+        //                 // User doesn't have permission to access the object
+        //                 break;
+        //             case 'storage/canceled':
+        //                 // User canceled the upload
+        //                 break;
+
+        //             // ...
+
+        //             case 'storage/unknown':
+        //                 // Unknown error occurred, inspect the server response
+        //                 break;
+        //         }
+
+        //     });
+        }
+
     // render the login form and the temporary "User Info" section
     return (
-        <>
-            <div className="header">
-                Login
-            </div>
-            <div className="login-dialog-box" id="login-window">
-                <p> Email </p>
-                <input type="text" id="login-email" className="text-box" />
-                <br></br>
-                <p> Password </p>
-                <input type="password" id="login-password" className="text-box" />
-                <br></br>
-                <button onClick={() => login()} className="btn"> Login </button>
-                <br></br>
-            </div>
+            <>
+                <div className="header">
+                    Login
+                </div>
+                <div className="login-dialog-box" id="login-window">
+                    <p> Email </p>
+                    <input type="text" id="login-email" className="text-box" />
+                    <br></br>
+                    <p> Password </p>
+                    <input type="password" id="login-password" className="text-box" />
+                    <br></br>
+                    <button onClick={() => login()} className="btn"> Login </button>
+                    <br></br>
+                </div>
 
-            <div className="temp-user-info">
-                User Info (Temp)
-                <p id="user-credential"> </p>
-            </div>
-        </>
-    );
-}
+                <div className="temp-user-info">
+                    User Info (Temp)
+                    <p id="user-credential"> </p>
+                </div>
+                <button className="btn" onClick={getImage}>testing firebase storage</button>
+
+            </>
+        );
+    }
