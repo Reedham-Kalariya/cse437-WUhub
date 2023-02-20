@@ -35,11 +35,6 @@ export default function Home() {
     router.push('/RegisterPage')
   }
 
-  const updateProfileClick = () => {
-    console.log("update profile click");
-    router.push('/UpdateProfilePage')
-  }
-
   return (
     <>
       <div className="index-header">
@@ -52,8 +47,6 @@ export default function Home() {
         <button className="btn" onClick={loginClick}> Login </button>
         <br></br>
         <button className="btn" onClick={registerClick}> Register </button>
-        <br></br>
-        <button className="btn" onClick={updateProfileClick}> Update Profile </button>
 
       </div>
 

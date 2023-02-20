@@ -1,6 +1,7 @@
 // import the Firebase app initialization function
 import { init_firebase } from '@/firebase/firebase-config';
 import { init_firebase_storage } from '@/firebase/firebase-storage-config';
+import { useRouter } from "next/router"
 
 // import the Firebase authentication SDK functions
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
@@ -26,6 +27,8 @@ export default function LoginPage() {
     // initialize the user variable to null
     let user = null;
 
+    const router = useRouter();
+
     // define the login function that gets called when the user clicks the "Login" button
     function login() {
         console.log("login initiatied")
@@ -42,6 +45,7 @@ export default function LoginPage() {
                 user = userCredential.user;
                 console.log(user);
                 document.getElementById("user-credential")!.innerHTML = JSON.stringify(user);
+                router.push("/StudentDashboard")
             }).catch((err) => {
                 // if authentication fails, show an alert message depending on the error code returned by Firebase
                 switch (err.code) {

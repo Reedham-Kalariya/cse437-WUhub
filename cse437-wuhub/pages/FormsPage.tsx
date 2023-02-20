@@ -17,12 +17,27 @@ export default function FormsPage() {
         router.push('/StudentDashboard');
     }
 
+    const makeOrg = () => {
+        console.log("profile click");
+        router.push('/StudentDashboard');
+    }
+
+    const makeEvent = () => {
+        console.log("profile click");
+        router.push('/StudentDashboard');
+    }
+
+    
+
     // render the Student Dashboard page
     return (
         <div>
             <button onClick={backClick} className="btn"> Back to Dashboard </button>
             <br></br>
-            This is where we will display relevant forms.
+            <button onClick={makeOrg} className="btn"> Make Organization </button>
+            <br></br>
+            <button onClick={makeEvent} className="btn"> Make Event </button>
+            <br></br>
         </div>
     );
 }
