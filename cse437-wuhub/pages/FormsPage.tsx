@@ -13,18 +13,15 @@ export default function FormsPage() {
     const router = useRouter();
 
     const backClick = () => {
-        console.log("profile click");
         router.push('/StudentDashboard');
     }
 
     const makeOrg = () => {
-        console.log("profile click");
-        router.push('/StudentDashboard');
+        router.push('/MakeOrgPage');
     }
 
     const makeEvent = () => {
-        console.log("profile click");
-        router.push('/StudentDashboard');
+        router.push('/MakeEventPage');
     }
 
     
