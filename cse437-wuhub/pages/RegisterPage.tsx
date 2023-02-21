@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { init_firebase } from '@/firebase/firebase-config';
+import { useRouter } from "next/router"
 
 // define the RegisterPage functional component
 export default function RegisterPage() {
@@ -8,6 +9,7 @@ export default function RegisterPage() {
     // Initialize Firebase
     const firebase = init_firebase(); // initialize the Firebase app
     const auth = getAuth(); // get the authentication object
+    const router = useRouter(); // use routes
 
     function register() {
         console.log("register initiaited"); // log that registration is being initiated
@@ -19,7 +21,8 @@ export default function RegisterPage() {
         // Create User with Email and Password
         createUserWithEmailAndPassword(auth, email, password) // create a user with email and password using the Firebase authentication object
             .then(() => {
-                alert("Successfully registered! Please log in.") // alert the user that registration was successful
+                alert("Successfully registered! Please log in."); // alert the user that registration was successful
+                router.push('/LoginPage');
             })
             .catch((err) => {
                 // Handle Errors here.
