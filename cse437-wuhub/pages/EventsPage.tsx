@@ -79,7 +79,6 @@ export default function EventsPage({ posts }: Props) {
                 posts.map((post) => {
                     return (
                         <div key={post.id}>
-                            {console.log(post)}
                             <h2>{post.title}</h2>
                             <p>{post.start}</p>
                             <p>{post.end}</p>
