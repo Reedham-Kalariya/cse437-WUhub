@@ -4,13 +4,13 @@ import { initializeApp } from 'firebase/app';
 import { useRouter } from "next/router";
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { init_firebase } from '@/firebase/firebase-config';
-import { init_firestore } from '../firebase/firebase-config';
+import { init_firebase_storage } from '../firebase/firebase-storage-config';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { getFirestore, collection, Firestore, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
-const firestore = init_firestore();
+const firestore = init_firebase_storage();
 
 // Expected database schema
 interface Event {
