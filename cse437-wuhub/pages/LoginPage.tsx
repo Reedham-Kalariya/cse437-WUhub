@@ -1,135 +1,205 @@
 // import the Firebase app initialization function
-import { init_firebase } from '@/firebase/firebase-config';
-import { init_firebase_storage } from '@/firebase/firebase-storage-config';
-import { useRouter } from "next/router"
+import { init_firebase } from "@/firebase/firebase-config";
+import { init_firebase_storage } from "@/firebase/firebase-storage-config";
+import { useRouter } from "next/router";
+import React from "react";
+import * as ReactDOM from "react-dom";
 
 // import the Firebase authentication SDK functions
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  UserCredential,
+} from "firebase/auth";
 
 // import the Firebase Firebase Storage SDK functions
-import { ref, getDownloadURL } from 'firebase/storage';
+import { ref, getDownloadURL } from "firebase/storage";
 
 // Firestore
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 
+import styles from "../styles/LoginPage.module.css";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+import Image from "next/image";
+import brookings_seal from "../resources/brookings-seal.png";
+import wuhub_logo from "../resources/wuhub_logo.png";
+
 // define the LoginPage functional component
 export default function LoginPage() {
+  // initialize Firebase using the init_firebase function
+  const firebase = init_firebase();
 
-    // initialize Firebase using the init_firebase function
-    const firebase = init_firebase();
+  //initialize Firebase storage
+  const storage = init_firebase_storage();
 
-    //initialize Firebase storage
-    const storage = init_firebase_storage();
+  // get an instance of the Auth object from the Firebase authentication SDK
+  const auth = getAuth();
 
-    // get an instance of the Auth object from the Firebase authentication SDK
-    const auth = getAuth();
+  const router = useRouter();
 
-    // initialize the user variable to null
-    let user = null;
+  // define the login function that gets called when the user clicks the "Login" button
+  function login() {
+    console.log("login initiatied");
+    // get the user's email and password from the input fields
+    let email = (document.getElementById("login-email")! as HTMLInputElement)
+      .value;
+    let password = (
+      document.getElementById("login-password")! as HTMLInputElement
+    ).value;
 
-    const router = useRouter();
-
-    // define the login function that gets called when the user clicks the "Login" button
-    function login() {
-        console.log("login initiatied")
-        // get the user's email and password from the input fields
-        let email = (document.getElementById("login-email")! as HTMLInputElement).value;
-        let password = (document.getElementById("login-password")! as HTMLInputElement).value;
-        console.log(email);
-        console.log(password);
-
-        // authenticate the user with Firebase using the signInWithEmailAndPassword function
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                // if authentication is successful, update the user variable and display the user's authentication information in the DOM
-                user = userCredential.user;
-                console.log(user);
-                document.getElementById("user-credential")!.innerHTML = JSON.stringify(user);
-                router.push("/StudentDashboard")
-            }).catch((err) => {
-                // if authentication fails, show an alert message depending on the error code returned by Firebase
-                switch (err.code) {
-                    case 'auth/invalid-email':
-                        alert("Invalid email!")
-                        break
-                    case 'auth/user-not-found':
-                        alert("Account does not exist. Please register")
-                        break
-                    case 'auth/wrong-password':
-                        alert("Wrong Password!")
-                        break
-                }
-                console.log(err.code);
-                console.log(err.message);
-            });
-    }
-
-    async function getImage() {
-        // const citiesRef = collection(), "cities");
-        const docRef = doc(storage, "events", "WILD");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            console.log(docRef)
-            console.log(docSnap.data())
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Making sure user email is verified
+        if (auth.currentUser?.emailVerified == false) {
+          notVerifiedDialog(userCredential);
+          auth.signOut();
         } else {
-            console.log("no document!");
+          router.push("/StudentDashboard");
         }
-
-
-
-        // const pathRef = ref(storage, '/items_spritesheet.png');
-        // getDownloadURL(pathRef)
-        //     .then((url) => {
-        //         console.log(url);
-        //     })
-        //     .catch((error) => {
-        //         // A full list of error codes is available at
-        //         // https://firebase.google.com/docs/storage/web/handle-errors
-        //         switch (error.code) {
-        //             case 'storage/object-not-found':
-        //                 // File doesn't exist
-        //                 break;
-        //             case 'storage/unauthorized':
-        //                 // User doesn't have permission to access the object
-        //                 break;
-        //             case 'storage/canceled':
-        //                 // User canceled the upload
-        //                 break;
-
-        //             // ...
-
-        //             case 'storage/unknown':
-        //                 // Unknown error occurred, inspect the server response
-        //                 break;
-        //         }
-
-        //     });
+      })
+      .catch((err) => {
+        switch (err.code) {
+          case "auth/invalid-email":
+            alert("Invalid email!");
+            break;
+          case "auth/user-not-found":
+            alert("Account does not exist. Please register");
+            break;
+          case "auth/wrong-password":
+            alert("Wrong Password!");
+            break;
         }
+        console.log(err.code);
+        console.log(err.message);
+      });
+  }
 
-    // render the login form and the temporary "User Info" section
-    return (
-            <>
-                <div className="header">
-                    Login
-                </div>
-                <div className="login-dialog-box" id="login-window">
-                    <p> Email </p>
-                    <input type="text" id="login-email" className="text-box" />
-                    <br></br>
-                    <p> Password </p>
-                    <input type="password" id="login-password" className="text-box" />
-                    <br></br>
-                    <button onClick={() => login()} className="btn"> Login </button>
-                    <br></br>
-                </div>
+  const backClick = () => {
+    console.log("profile click");
+    router.push("/");
+  };
 
-                <div className="temp-user-info">
-                    User Info (Temp)
-                    <p id="user-credential"> </p>
-                </div>
-                <button className="btn" onClick={getImage}>testing firebase storage</button>
+  function notVerifiedDialog(userCredential: UserCredential) {
+    const dialogBox = document.getElementById("dialogBox");
+    ReactDOM.render(
+      <>
+        <Alert variant="danger">
+          <p>
+            The email address associated with your account has not been verified
+            yet. Verifying your email is an important step in ensuring the
+            security of your account and protecting your personal information.
+          </p>
+          <p>
+            When you receive the verification email, please follow the
+            instructions in the email to verify your account. If you have not
+            received the email, click the button below to resend a verification
+            link.
+          </p>
+          <p>Once you're done, please log in.</p>
+        </Alert>
+        <Button
+          variant="secondary"
+          onClick={() => verifyEmail(userCredential)}
+        >
+          Resend Verification Link
+        </Button>
+      </>,
+      dialogBox
+    );
+  }
 
-            </>
-        );
-    }
+  async function verifyEmail(userCredential: UserCredential) {
+    // verifying email
+    await sendEmailVerification(userCredential.user).then(() => {
+      console.log("email sent");
+      showVerifyEmailDialog();
+      auth.signOut();
+    });
+  }
+
+  function showVerifyEmailDialog() {
+    const dialogBox = document.getElementById("dialogBox");
+    ReactDOM.render(
+      <>
+        <Alert variant="success">
+          <p>
+            We have sent a verification link to your email address associated
+            with your account.
+          </p>
+          <p>
+            To complete the verification process and ensure the security of your
+            account, please check your email inbox and follow the instructions
+            in the email to verify your account.
+          </p>
+          <p>
+            If you have not received the email within a few minutes, please
+            check your spam or junk folder as it may have been filtered there.
+          </p>
+          <p>Once you're done, please log in.</p>
+        </Alert>
+      </>,
+      dialogBox
+    );
+  }
+
+  return (
+    <>
+      <div className="header">
+        <div className="headerLeft">
+          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
+        </div>
+        <div className="headerRight">
+          <div id="profile-button">Login for the full WU|Hub Experience!</div>
+        </div>
+      </div>
+      <Button
+        variant="secondary"
+        onClick={backClick}
+        className={styles.backToLandingBtn}
+      >
+        <strong>&lt;</strong> Back to Home
+      </Button>
+      <div className={styles.mainContent}>
+        <Image
+          src={brookings_seal}
+          alt="brookings_seal"
+          className={styles.laptopMockupImage}
+          width={250}
+          height={250}
+        />
+        <div className={styles.dialogBox} id="dialogBox">
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Email address</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Enter email"
+                id="login-email"
+              />
+              <Form.Text className="text-muted">
+                We'll never share your email with anyone else.
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                id="login-password"
+              />
+            </Form.Group>
+            <Button variant="success" onClick={() => login()}>
+              Submit
+            </Button>
+          </Form>
+        </div>
+      </div>
+    </>
+  );
+}
