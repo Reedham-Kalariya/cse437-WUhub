@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from "next/router"
 import { init_firebase } from '@/firebase/firebase-config';
+import styles from '../styles/dashboard.module.css';
 
 // define the Student Dashboard functional component
 export default function StudentDashboard() {
@@ -58,24 +59,25 @@ export default function StudentDashboard() {
 
     // render the Student Dashboard page
     return (
-        <div>
-            <div id="header_bar">
-                <button id="logout_btn" className="btn" onClick={logoutClick}>Log Out</button>
-                <button id="profile_btn" className="btn" onClick={profileClick}>Profile</button>
-                <button id="forms_btn" className="btn" onClick={FormsClick}>Forms</button>
-                <button id="res_and_pol_btn" className="btn" onClick={resourcesClick}>Resources and Policies</button>
+        <div className="container">
+            <div className={styles.header_bar}>
+                <button id="logout_btn" className={styles.btn} onClick={logoutClick}>Log Out</button>
+                <button id="profile_btn" className={styles.btn} onClick={profileClick}>Profile</button>
+                <button id="forms_btn" className={styles.btn} onClick={FormsClick}>Forms</button>
+                <button id="res_and_pol_btn" className={styles.btn} onClick={resourcesClick}>Resources and Policies</button>
+                <hr></hr>
             </div>
             <div>
                 <span id="someOrgs"></span>
-                <button className="btn" onClick={organizationsClick}>Show All Organizations</button>
+                <button className={styles.btn} onClick={organizationsClick}>Show All Organizations</button>
             </div>
             <div>
             <span id="someEvents"></span>
-                <button className="btn" onClick={eventsClick}>Show All Events</button>
+                <button className={styles.btn} onClick={eventsClick}>Show All Events</button>
             </div>
-            <div className="container">
+            {/* <div className="container">
                 Put Contact Info Here
-            </div>
+            </div> */}
         </div>
         );
 }
