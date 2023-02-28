@@ -6,7 +6,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { init_firebase } from '@/firebase/firebase-config';
 import { init_firebase_storage } from '../firebase/firebase-storage-config';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { getFirestore, collection, Firestore, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
+import { getFirestore, collection, Firestore, addDoc, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
 
 
 const firebase = init_firebase(); // initialize the Firebase app
