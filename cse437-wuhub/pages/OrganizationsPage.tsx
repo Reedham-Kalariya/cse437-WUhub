@@ -11,7 +11,7 @@ import { getFirestore, collection, Firestore, addDoc, getDoc, getDocs, deleteDoc
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
-const firestore = init_firestore();
+const firestore = init_firebase_storage();
 
 // Expected database schema
 interface Organization {
