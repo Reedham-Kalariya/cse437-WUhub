@@ -11,7 +11,7 @@ import { getFirestore, collection, Firestore, getDoc, getDocs, deleteDoc, doc, T
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
-const firestore = init_firebase_storage();
+const firestore = init_firestore();
 
 // Expected database schema
 interface Organization {
@@ -44,20 +44,31 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     };
 };
 
-export default function OrganizationsPage({ posts }: Props) {
+const OrganizationsPage = ({ posts }: Props): JSX.Element => {
 
     const router = useRouter();
-
     const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
+    const [newOrgName, setNewOrgName] = useState('');
 
     const backClick = () => {
         router.push('/StudentDashboard');
     }
 
-    const handleDeletePost = async (postId: string) => {
+    const handleAddOrg = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const orgCollection = collection(firestore, 'organizations');
+        await addDoc(orgCollection, {
+            name: newOrgName,
+        });
+        setNewOrgName('');
+        router.push('/OrganizationsPage');
+    };
+
+    const handleDeleteOrg = async (postId: string) => {
         await deleteDoc(doc(firestore, 'organizations', postId));
         setDeletedPostId(postId);
     };
+
 
     if (!posts) {
         return <div>Loading...</div>;
@@ -67,12 +78,23 @@ export default function OrganizationsPage({ posts }: Props) {
         <>
             <button onClick={backClick} className="btn"> Back to Dashboard </button>
             <h1>Organizations</h1>
+            <form onSubmit={handleAddOrg}>
+                <label>
+                    New Organization Name:
+                    <input
+                        type="text"
+                        value={newOrgName}
+                        onChange={(e) => setNewOrgName(e.target.value)}
+                    />
+                </label>
+                <button type="submit">Add Organization</button>
+            </form>
             {
                 posts.map((post) => {
                     return (
                         <div key={post.id}>
                             <h2>{post.name}</h2>
-                            <button onClick={() => handleDeletePost(post.id)}>Delete</button>
+                            <button onClick={() => handleDeleteOrg(post.id)}>Delete</button>
                             {deletedPostId === post.id && <p>Post deleted!</p>}
                         </div>
                     )
@@ -81,3 +103,5 @@ export default function OrganizationsPage({ posts }: Props) {
         </>
     );
 };
+
+export default OrganizationsPage;
