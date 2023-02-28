@@ -80,7 +80,7 @@ export default function UpdateProfilePage() {
               Update Profile{" "}
             </Button>
             <p> Display Name </p>
-            <input type="text" id="display-name" className="text-box" value={currentUser.displayName}/>
+            <input type="text" id="display-name" className="text-box" />
             <br></br>
             <p> Profile Pic URL </p>
             <input type="text" id="profile-pic-url" className="text-box" />
