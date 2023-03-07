@@ -9,6 +9,16 @@
     border-radius: 5px;
 }
 
+.col{
+    float: left;
+    width: 30%;
+}
+
+.orgs{
+    margin-left: 5%;
+    width:100%;
+}
+
 .header_bar{
     background-color: rgb(240, 240, 240);
 }
