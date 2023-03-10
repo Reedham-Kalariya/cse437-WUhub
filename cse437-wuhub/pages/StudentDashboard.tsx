@@ -3,7 +3,7 @@ import { GetStaticProps, NextPage } from 'next';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from "next/router"
 import { init_firebase } from '@/firebase/firebase-config';
-import { init_firebase_storage } from '../firebase/firebase-storage-config';
+import { init_firebase_storage } from '../firebase/firebase-config';
 import { getFirestore, collection, limit, query, Firestore, addDoc, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
 import styles from '../styles/dashboard.module.css';
 // import 'bootstrap/dist/css/bootstrap.min.css';
