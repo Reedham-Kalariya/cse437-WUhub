@@ -4,7 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { useRouter } from "next/router";
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { init_firebase } from '@/firebase/firebase-config';
-import { init_firebase_storage } from '../firebase/firebase-storage-config';
+import { init_firebase_storage } from '../firebase/firebase-config';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { getFirestore, collection, Firestore, addDoc, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
 

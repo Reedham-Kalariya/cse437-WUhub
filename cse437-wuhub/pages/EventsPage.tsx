@@ -4,9 +4,10 @@ import { initializeApp } from 'firebase/app';
 import { useRouter } from "next/router";
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { init_firebase } from '@/firebase/firebase-config';
-import { init_firebase_storage } from '../firebase/firebase-storage-config';
+import { init_firebase_storage } from '../firebase/firebase-config';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { getFirestore, collection, Firestore, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
+import { getFirestore, collection, Firestore, addDoc, getDoc, getDocs, deleteDoc, doc, Timestamp, DocumentReference } from 'firebase/firestore';
+
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
@@ -18,12 +19,8 @@ interface Event {
     title: string;
     start: string;
     end: string;
-    organization: string;
 }
 
-interface Organization {
-    name: string;
-}
 
 interface Props {
     posts: Event[];
@@ -41,9 +38,8 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
         postData.push({
             id: doc.id,
             title: data.title,
-            start: data.start.toDate().toISOString(),
-            end: data.end.toDate().toISOString(),
-            organization: data.organization,
+            start: data.start,
+            end: data.end,
         } as Event);
     });
 
@@ -52,20 +48,38 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     };
 };
 
-export default function EventsPage({ posts }: Props) {
+const EventsPage = ({ posts }: Props): JSX.Element => {
 
     const router = useRouter();
+    const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
+    const [newEventName, setNewEventName] = useState('');
+    const [newEventStart, setNewEventStart] = useState('');
+    const [newEventEnd, setNewEventEnd] = useState('');
 
     const backClick = () => {
         router.push('/StudentDashboard');
     }
 
-    const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
+    const handleAddEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const eventCollection = collection(firestore, 'events');
+        await addDoc(eventCollection, {
+            title: newEventName,
+            start: newEventStart,
+            end: newEventEnd
+        });
+        setNewEventName('');
+        setNewEventStart('');
+        setNewEventEnd('');
+        router.push('/EventsPage');
+    };
 
-    const handleDeletePost = async (postId: string) => {
+    const handleDeleteEvent = async (postId: string) => {
         await deleteDoc(doc(firestore, 'events', postId));
         setDeletedPostId(postId);
+        router.push('/EventsPage');
     };
+
 
     if (!posts) {
         return <div>Loading...</div>;
@@ -75,15 +89,39 @@ export default function EventsPage({ posts }: Props) {
         <>
             <button onClick={backClick} className="btn"> Back to Dashboard </button>
             <h1>Events</h1>
+            <form onSubmit={handleAddEvent}>
+                <label>
+                    New Event Title:
+                    <input
+                        type="text"
+                        value={newEventName}
+                        onChange={(e) => setNewEventName(e.target.value)}
+                    />
+                </label>
+                <label>
+                    New Event Start Time:
+                    <input
+                        type="text"
+                        value={newEventStart}
+                        onChange={(e) => setNewEventStart(e.target.value)}
+                    />
+                </label>
+                <label>
+                    New Event End Time:
+                    <input
+                        type="text"
+                        value={newEventEnd}
+                        onChange={(e) => setNewEventEnd(e.target.value)}
+                    />
+                </label>
+                <button type="submit">Add Event</button>
+            </form>
             {
                 posts.map((post) => {
                     return (
                         <div key={post.id}>
                             <h2>{post.title}</h2>
-                            <p>{post.start}</p>
-                            <p>{post.end}</p>
-                            <p>{post.organization}</p>
-                            <button onClick={() => handleDeletePost(post.id)}>Delete</button>
+                            <button onClick={() => handleDeleteEvent(post.id)}>Delete</button>
                             {deletedPostId === post.id && <p>Post deleted!</p>}
                         </div>
                     )
@@ -92,3 +130,5 @@ export default function EventsPage({ posts }: Props) {
         </>
     );
 };
+
+export default EventsPage;

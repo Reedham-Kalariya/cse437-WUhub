@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/router";
 import { init_firebase } from "@/firebase/firebase-config";
 
@@ -19,6 +19,14 @@ export default function ProfilePage() {
   const auth = getAuth(); // get the authentication object
 
   let currentUser = auth.currentUser;
+  // Session Management
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = auth.currentUser;
+    } 
+  });
+
+  console.log(currentUser);
 
   const router = useRouter();
 
@@ -53,7 +61,13 @@ export default function ProfilePage() {
 
       <div className={styles.mainContent}>
         <div className={styles.mainContentCenter}>
-          <Image src={profile} width={240} height={240} alt="profile" className={styles.profile}></Image>
+          <Image
+            src={profile}
+            width={240}
+            height={240}
+            alt="profile"
+            className={styles.profile}
+          ></Image>
           <div>
             <p> Email: {currentUser?.email} </p>
             <p> Display Name: {currentUser?.displayName} </p>

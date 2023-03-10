@@ -1,6 +1,8 @@
+import { initializeApp } from "firebase/app";
+
 // import the Firebase app initialization function
 import { init_firebase } from "@/firebase/firebase-config";
-import { init_firebase_storage } from "@/firebase/firebase-storage-config";
+import { init_firebase_storage } from "@/firebase/firebase-config";
 import { useRouter } from "next/router";
 import React from "react";
 import * as ReactDOM from "react-dom";
@@ -11,6 +13,9 @@ import {
   signInWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
+  setPersistence,
+  onAuthStateChanged,
+  browserSessionPersistence
 } from "firebase/auth";
 
 // import the Firebase Firebase Storage SDK functions
@@ -59,6 +64,9 @@ export default function LoginPage() {
           notVerifiedDialog(userCredential);
           auth.signOut();
         } else {
+          // firebase.post('./sessionLogin', (req, res) => {
+
+          // })
           router.push("/StudentDashboard");
         }
       })
@@ -102,10 +110,7 @@ export default function LoginPage() {
           </p>
           <p>Once you're done, please log in.</p>
         </Alert>
-        <Button
-          variant="secondary"
-          onClick={() => verifyEmail(userCredential)}
-        >
+        <Button variant="secondary" onClick={() => verifyEmail(userCredential)}>
           Resend Verification Link
         </Button>
       </>,
