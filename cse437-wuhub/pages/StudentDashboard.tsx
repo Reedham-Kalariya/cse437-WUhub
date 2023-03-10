@@ -82,16 +82,6 @@ const StudentDashboard = ({ posts, events }: Props): JSX.Element => {
     const firebase = init_firebase(); // initialize the Firebase app
     const auth = getAuth(); // get the authentication object
 
-    //function to get the three closest events and display
-    const displayOrgs = () => {
-        //TODO: access the organizations in firebase, grab 3ish and put them in the span
-    }
-
-    //function to get three organizations and dispaly
-    const displayEvents = () => {
-        //TODO: access the events in firebase, grab 3ish and put them in the span
-    }
-
     const router = useRouter();
 
     const logoutClick = () => {
