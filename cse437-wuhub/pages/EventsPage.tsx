@@ -1,24 +1,18 @@
 import React, { useState, useEffect, ReactElement } from "react";
 import * as ReactDOM from "react-dom";
 import { GetStaticProps, NextPage } from "next";
-import { initializeApp } from "firebase/app";
-import router, { useRouter } from "next/router";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/router";
+import { getAuth } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 import { init_firebase_storage } from "../firebase/firebase-config";
-import { useDocument, useCollection } from "react-firebase-hooks/firestore";
 import {
-  getFirestore,
   collection,
-  Firestore,
   addDoc,
-  getDoc,
   getDocs,
   deleteDoc,
   doc,
-  Timestamp,
-  DocumentReference,
   updateDoc,
+  Timestamp
 } from "firebase/firestore";
 
 import Image from "next/image";
@@ -40,6 +34,9 @@ let currentUser = auth.currentUser;
 interface Event {
   id: string;
   title: string;
+  location: string;
+  private: boolean;
+  description: string;
   start: string;
   end: string;
 }
@@ -48,6 +45,8 @@ interface Props {
   posts: Event[];
 }
 
+
+// Load existing events
 export const getStaticProps: GetStaticProps<Props> = async () => {
   const postsCollection = await collection(firestore, "events");
   const postsQuerySnapshot = await getDocs(postsCollection);
@@ -59,6 +58,9 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     postData.push({
       id: doc.id,
       title: data.title,
+      location: data.location,
+      private: data.private,
+      description: data.description,
       start: data.start,
       end: data.end,
     } as Event);
@@ -69,48 +71,143 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
   };
 };
 
-const EventsPage = ({ posts }: Props): JSX.Element => {
-  const router = useRouter();
-  const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
-  const [newEventName, setNewEventName] = useState("");
-  const [newEventStart, setNewEventStart] = useState("");
-  const [newEventEnd, setNewEventEnd] = useState("");
 
+
+// EventPage Object
+const EventsPage = ({ posts }: Props): JSX.Element => {
+
+  // Back click
+  const router = useRouter();
   const backClick = () => {
     router.push("/StudentDashboard");
   };
 
-  const handleAddEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [events, setEvents] = useState(posts);
+
+  // Variables for creating a new event
+  const [newEventID, setNewEventID] = useState("placeholder");
+  const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventLocation, setNewEventLocation] = useState("");
+  const [newEventPrivate, setNewEventPrivate] = useState(false);
+  const [newEventDescription, setNewEventDescription] = useState("");
+  const [newEventStart, setNewEventStart] = useState("");
+  const [newEventEnd, setNewEventEnd] = useState("");
+
+  // Edit variables
+  const [editMode, setEditMode] = useState(false);
+  const [editEventID, setEditEventID] = useState("");
+
+
+  const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
+
+  const addNewEvent = (newEvent: Event): void => {
+    setEvents(prevEvents => [...prevEvents, newEvent]);
+  }
+
+  const clearStagingArea = () => {
+    setEditMode(false);
+    setNewEventID("placeholder_for_database");
+    setNewEventTitle("");
+    setNewEventLocation("");
+    setNewEventDescription("");
+    setNewEventPrivate(false);
+    setNewEventStart("");
+    setNewEventEnd("");
+  }
+
+  // Handle the create/edit event area
+  const handleStagedEvent = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (editMode) {
+
+      // Throw to local
+      updateDoc(doc(firestore, "events", newEventID), {
+        title: newEventTitle,
+        location: newEventLocation,
+        private: newEventPrivate,
+        description: newEventDescription,
+        start: newEventStart,
+        end: newEventEnd,
+      });
+
+      // Throw to local
+      setEvents(prevEvents => {
+        const index = prevEvents.findIndex(event => event.id === newEventID);
+        if (index !== -1) {
+          const updatedEvents = [...prevEvents];
+          updatedEvents[index] = ({
+            id: newEventID,
+            title: newEventTitle,
+            location: newEventLocation,
+            private: newEventPrivate,
+            description: newEventDescription,
+            start: newEventStart,
+            end: newEventEnd,
+          } as Event);
+          return updatedEvents;
+        }
+        // if the event with the given ID is not found, return the original array
+        return prevEvents;
+      });
+
+      clearStagingArea();
+
+      return;
+    }
+
+    // Throw at server
     const eventCollection = collection(firestore, "events");
-    await addDoc(eventCollection, {
-      title: newEventName,
+    addDoc(eventCollection, {
+      title: newEventTitle,
+      location: newEventLocation,
+      private: newEventPrivate,
+      description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
     });
-    setNewEventName("");
-    setNewEventStart("");
-    setNewEventEnd("");
-    router.push("/EventsPage");
+
+    // Throw at local
+    addNewEvent({
+      id: "placeholder_for_database",
+      title: newEventTitle,
+      location: newEventLocation,
+      private: newEventPrivate,
+      description: newEventDescription,
+      start: newEventStart,
+      end: newEventEnd,
+    } as Event)
+
+    clearStagingArea();
+    
+    return;
+
   };
 
+
+  const handleEditMode = (post: Event) => {
+    setEditMode(true);
+    setNewEventID(post.id);
+    setNewEventTitle(post.title);
+    setNewEventLocation(post.location);
+    setNewEventDescription(post.description);
+    setNewEventPrivate(post.private);
+    setNewEventStart(post.start);
+    setNewEventEnd(post.end);
+  }
+
+
+
+  // Handle deleting an event
   const handleDeleteEvent = async (postId: string) => {
     await deleteDoc(doc(firestore, "events", postId));
     setDeletedPostId(postId);
     router.push("/EventsPage");
   };
 
-  const renderEditDialogBox = (postId: string) => {
-
-    const prev_event_div = document.getElementById(postId);
-    prev_event_div?.classList.add("selectedBorder");
-
-    const addEventsBox = document.getElementById("addEventsBox");
-    ReactDOM.render(<EditEventDialogBox id={postId} />, addEventsBox);
-  };
-
   return (
     <>
+
       <div className="header">
         <div className="headerLeft">
           <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
@@ -119,6 +216,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
           <div id="profile-button">{currentUser?.email}</div>
         </div>
       </div>
+
+
       <Button
         variant="secondary"
         onClick={backClick}
@@ -129,7 +228,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
       <div className={styles.mainContent}>
         <div className={styles.currentEventsBox}>
-          {posts.map((post) => {
+          {events.map((post) => {
             return (
               <>
                 <Card
@@ -145,13 +244,15 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">RSVP</Button>
                       <Button
+                        type="button"
                         variant="secondary"
-                        onClick={() => renderEditDialogBox(post.id)}
+                        onClick={() => handleEditMode(post)}
                       >
                         Edit
                       </Button>
                       <Button
-                        variant="secondary"
+                        type="button"
+                        variant="danger"
                         onClick={() => handleDeleteEvent(post.id)}
                       >
                         Delete
@@ -165,13 +266,38 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
         </div>
 
         <div className={styles.addEventsBox} id="addEventsBox">
-          <h1>Make a New Event</h1>
-          <Form onSubmit={handleAddEvent}>
+          <h1>{editMode ? "Edit an Event" : "Make a New Event"}</h1>
+          <Form onSubmit={(e) => handleStagedEvent(e)}>
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
-                value={newEventName}
-                onChange={(e) => setNewEventName(e.target.value)}
+                value={newEventTitle}
+                onChange={(e) => setNewEventTitle(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Location</Form.Label>
+              <Form.Control
+                value={newEventLocation}
+                onChange={(e) => setNewEventLocation(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                value={newEventDescription}
+                onChange={(e) => setNewEventDescription(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Private"
+                type="checkbox"
+                checked={newEventPrivate}
+                onChange={(e) => setNewEventPrivate(e.target.checked)}
               />
             </Form.Group>
 
@@ -191,67 +317,19 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
               />
             </Form.Group>
 
-            <Button variant="primary" type="submit">
-              Add Event
+            <Button variant={editMode ? "warning" : "primary"} type="submit">
+              {editMode ? "Edit Event" : "Add Event"}
             </Button>
+
+            {editMode && (
+              <Button variant="light" type="button" onClick={clearStagingArea}>
+                Close Edit Mode
+              </Button>
+            )}
+
           </Form>
         </div>
       </div>
-    </>
-  );
-};
-
-interface PostIDProp {
-  id: string;
-}
-
-const EditEventDialogBox = (prop : PostIDProp): JSX.Element => {
-
-  const [newEventName, setNewEventName] = useState("");
-  const [newEventStart, setNewEventStart] = useState("");
-  const [newEventEnd, setNewEventEnd] = useState("");
-
-  const handleEditEvent = async (postId: string) => {
-    await updateDoc(doc(firestore, "events", postId), {
-      title: newEventName,
-      start: newEventStart,
-      end: newEventEnd,
-    });
-    router.push("/EventsPage");
-  };
-
-  return (
-    <>
-      <h1>Edit Event</h1>
-      <Form>
-        <Form.Group className="mb-3">
-          <Form.Label>Name</Form.Label>
-          <Form.Control
-            value={newEventName}
-            onChange={(e) => setNewEventName(e.target.value)}
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Start Time</Form.Label>
-          <Form.Control
-            defaultValue={newEventStart}
-            onChange={(e) => setNewEventStart(e.target.value)}
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>End Time</Form.Label>
-          <Form.Control
-            defaultValue={newEventEnd}
-            onChange={(e) => setNewEventEnd(e.target.value)}
-          />
-        </Form.Group>
-
-        <Button variant="warning" onClick={() => handleEditEvent(prop.id)}>
-          Edit Event
-        </Button>
-      </Form>
     </>
   );
 };
