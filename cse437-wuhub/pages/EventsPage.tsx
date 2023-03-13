@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from "react";
 import * as ReactDOM from "react-dom";
 import { GetStaticProps, NextPage } from "next";
 import { initializeApp } from "firebase/app";
-import { useRouter } from "next/router";
+import router, { useRouter } from "next/router";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 import { init_firebase_storage } from "../firebase/firebase-config";
@@ -100,59 +100,14 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     router.push("/EventsPage");
   };
 
-  const handleEditEvent = async (postId: string) => {
-    console.log(postId);
-    await updateDoc(doc(firestore, "events", postId), {
-      title: "changed name",
-      start: "changed start",
-      end: "changed end",
-    });
-  };
+  const renderEditDialogBox = (postId: string) => {
 
-  const renderEditDialogBox = async (postId: string) => {
-    const docRef = doc(firestore, "events", postId);
-    const docSnap = await getDoc(docRef);
-    const prev_event = docSnap.data();
-
-    // const prev_event_div = document.getElementById(postId);
-    // prev_event_div?.classList.add("selectedBorder")
+    const prev_event_div = document.getElementById(postId);
+    prev_event_div?.classList.add("selectedBorder");
 
     const addEventsBox = document.getElementById("addEventsBox");
-    console.log(prev_event?.title);
-    ReactDOM.render(
-      <>
-        <h1>Edit Event</h1>
-        <Form onSubmit={() => handleEditEvent(postId)}>
-          <Form.Group className="mb-3">
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Start Time</Form.Label>
-            <Form.Control
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>End Time</Form.Label>
-            <Form.Control
-            />
-          </Form.Group>
-
-          <Button variant="warning" type="submit">
-            Edit Event
-          </Button>
-        </Form>
-      </>,
-      addEventsBox
-    );
+    ReactDOM.render(<EditEventDialogBox id={postId} />, addEventsBox);
   };
-
-  //   if (!posts) {
-  //     return <div>Loading...</div>;
-  //   }
 
   return (
     <>
@@ -185,7 +140,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                   <Card.Body>
                     <Card.Title>{post.title}</Card.Title>
                     <Card.Text>
-                      {post.start} {post.end}
+                      {post.start} to {post.end}
                     </Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">RSVP</Button>
@@ -242,6 +197,61 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
           </Form>
         </div>
       </div>
+    </>
+  );
+};
+
+interface PostIDProp {
+  id: string;
+}
+
+const EditEventDialogBox = (prop : PostIDProp): JSX.Element => {
+
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventStart, setNewEventStart] = useState("");
+  const [newEventEnd, setNewEventEnd] = useState("");
+
+  const handleEditEvent = async (postId: string) => {
+    await updateDoc(doc(firestore, "events", postId), {
+      title: newEventName,
+      start: newEventStart,
+      end: newEventEnd,
+    });
+    router.push("/EventsPage");
+  };
+
+  return (
+    <>
+      <h1>Edit Event</h1>
+      <Form>
+        <Form.Group className="mb-3">
+          <Form.Label>Name</Form.Label>
+          <Form.Control
+            value={newEventName}
+            onChange={(e) => setNewEventName(e.target.value)}
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Start Time</Form.Label>
+          <Form.Control
+            defaultValue={newEventStart}
+            onChange={(e) => setNewEventStart(e.target.value)}
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>End Time</Form.Label>
+          <Form.Control
+            defaultValue={newEventEnd}
+            onChange={(e) => setNewEventEnd(e.target.value)}
+          />
+        </Form.Group>
+
+        <Button variant="warning" onClick={() => handleEditEvent(prop.id)}>
+          Edit Event
+        </Button>
+      </Form>
     </>
   );
 };
