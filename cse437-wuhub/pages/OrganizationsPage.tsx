@@ -36,6 +36,8 @@ let currentUser = auth.currentUser;
 interface Organization {
   id: string;
   name: string;
+  desc: string;
+  route: string;
 }
 
 interface Props {
@@ -53,6 +55,7 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     postData.push({
       id: doc.id,
       name: data.name,
+      desc: data.desc,
     } as Organization);
   });
 
@@ -65,6 +68,7 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
   const router = useRouter();
   const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
   const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgDesc, setNewOrgDesc] = useState("");
 
   const backClick = () => {
     router.push("/StudentDashboard");
@@ -75,8 +79,11 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
     const orgCollection = collection(firestore, "organizations");
     await addDoc(orgCollection, {
       name: newOrgName,
+      desc: newOrgDesc,
+      route: null,
     });
     setNewOrgName("");
+    setNewOrgDesc("");
     router.push("/OrganizationsPage");
   };
 
@@ -118,6 +125,7 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
                 >
                   <Card.Body>
                     <Card.Title>{post.name}</Card.Title>
+                    <Card.Text>{post.desc}<Card.Text/></Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">Request to join </Button>
                     </ButtonGroup>
@@ -135,6 +143,13 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
               <Form.Control
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label> Short Description </Form.Label>
+              <Form.Control
+                value={newOrgDesc}
+                onChange={(e) => setNewOrgDesc(e.target.value)}
               />
             </Form.Group>
 

@@ -40,8 +40,13 @@ let currentUser = auth.currentUser;
 interface Event {
   id: string;
   title: string;
+  location: string;
+  public: boolean;
+  route: string;
+  desc: string
   start: string;
   end: string;
+
 }
 
 interface Props {
@@ -59,6 +64,10 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     postData.push({
       id: doc.id,
       title: data.title,
+      location: data.location,
+      public: data.public,
+      route: data.route,
+      desc: data.desc,
       start: data.start,
       end: data.end,
     } as Event);
@@ -71,8 +80,12 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
 
 const EventsPage = ({ posts }: Props): JSX.Element => {
   const router = useRouter();
-  const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
+  // const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
   const [newEventName, setNewEventName] = useState("");
+  const [newEventLoc, setNewEventLoc] = useState("");
+  const [newEventPublic, setNewEventPublic] = useState(false);
+  const [newEventRoute, setNewEventRoute] = useState("");  
+  const [newEventDesc, setNewEventDesc] = useState("");
   const [newEventStart, setNewEventStart] = useState("");
   const [newEventEnd, setNewEventEnd] = useState("");
 
@@ -87,8 +100,16 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       title: newEventName,
       start: newEventStart,
       end: newEventEnd,
+      desc: newEventDesc,
+      location: newEventLoc,
+      route: null,
+      public: !newEventPublic,
     });
     setNewEventName("");
+    setNewEventLoc("");
+    setNewEventPublic(false);
+    setNewEventRoute("");
+    setNewEventDesc("");
     setNewEventStart("");
     setNewEventEnd("");
     router.push("/EventsPage");
@@ -96,7 +117,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
   const handleDeleteEvent = async (postId: string) => {
     await deleteDoc(doc(firestore, "events", postId));
-    setDeletedPostId(postId);
+    // setDeletedPostId(postId);
     router.push("/EventsPage");
   };
 
@@ -140,7 +161,13 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                   <Card.Body>
                     <Card.Title>{post.title}</Card.Title>
                     <Card.Text>
-                      {post.start} to {post.end}
+                      {post.public ? "Public" : "Private"}
+                    </Card.Text>
+                    <Card.Text>
+                      {post.start} to {post.end} at {post.location}
+                    </Card.Text>
+                    <Card.Text>
+                      {post.desc}
                     </Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">RSVP</Button>
@@ -176,6 +203,22 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
             </Form.Group>
 
             <Form.Group className="mb-3">
+              <Form.Label>Location</Form.Label>
+              <Form.Control
+                value={newEventLoc}
+                onChange={(e) => setNewEventLoc(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                value={newEventDesc}
+                onChange={(e) => setNewEventDesc(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
               <Form.Label>Start Time</Form.Label>
               <Form.Control
                 value={newEventStart}
@@ -188,6 +231,15 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
               <Form.Control
                 value={newEventEnd}
                 onChange={(e) => setNewEventEnd(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Private"
+                type="checkbox"
+                checked={newEventPublic}
+                onChange={(e) => setNewEventPublic(e.target.checked)}
               />
             </Form.Group>
 
@@ -208,14 +260,23 @@ interface PostIDProp {
 const EditEventDialogBox = (prop : PostIDProp): JSX.Element => {
 
   const [newEventName, setNewEventName] = useState("");
+  const [newEventLoc, setNewEventLoc] = useState("");
+  const [newEventPublic, setNewEventPublic] = useState(false);
+  const [newEventRoute, setNewEventRoute] = useState("");  
+  const [newEventDesc, setNewEventDesc] = useState("");
   const [newEventStart, setNewEventStart] = useState("");
   const [newEventEnd, setNewEventEnd] = useState("");
+
 
   const handleEditEvent = async (postId: string) => {
     await updateDoc(doc(firestore, "events", postId), {
       title: newEventName,
       start: newEventStart,
       end: newEventEnd,
+      desc: newEventDesc,
+      location: newEventLoc,
+      route: null,
+      public: !newEventPublic,
     });
     router.push("/EventsPage");
   };
@@ -224,29 +285,54 @@ const EditEventDialogBox = (prop : PostIDProp): JSX.Element => {
     <>
       <h1>Edit Event</h1>
       <Form>
-        <Form.Group className="mb-3">
-          <Form.Label>Name</Form.Label>
-          <Form.Control
-            value={newEventName}
-            onChange={(e) => setNewEventName(e.target.value)}
-          />
-        </Form.Group>
+      <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                value={newEventName}
+                onChange={(e) => setNewEventName(e.target.value)}
+              />
+            </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Start Time</Form.Label>
-          <Form.Control
-            defaultValue={newEventStart}
-            onChange={(e) => setNewEventStart(e.target.value)}
-          />
-        </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Location</Form.Label>
+              <Form.Control
+                value={newEventLoc}
+                onChange={(e) => setNewEventLoc(e.target.value)}
+              />
+            </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>End Time</Form.Label>
-          <Form.Control
-            defaultValue={newEventEnd}
-            onChange={(e) => setNewEventEnd(e.target.value)}
-          />
-        </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                value={newEventDesc}
+                onChange={(e) => setNewEventDesc(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Start Time</Form.Label>
+              <Form.Control
+                value={newEventStart}
+                onChange={(e) => setNewEventStart(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>End Time</Form.Label>
+              <Form.Control
+                value={newEventEnd}
+                onChange={(e) => setNewEventEnd(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Private"
+                type="checkbox"
+                checked={newEventPublic}
+                onChange={(e) => setNewEventPublic(e.target.checked)}
+              />
+            </Form.Group>
 
         <Button variant="warning" onClick={() => handleEditEvent(prop.id)}>
           Edit Event

@@ -22,6 +22,7 @@ import styles from "../styles/dashboard.module.css";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Card from "react-bootstrap/Card";
+import Toast from "react-bootstrap/Toast";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import Image from "next/image";
@@ -196,11 +197,7 @@ const StudentDashboard = ({ posts, events }: Props): JSX.Element => {
                 >
                   <Card.Body>
                     <Card.Title>{post.name}</Card.Title>
-                      <Button
-                        variant="secondary"
-                      >
-                        Learn More
-                      </Button>
+                    <Button variant="secondary">Learn More</Button>
                   </Card.Body>
                 </Card>
               );
@@ -237,7 +234,6 @@ const StudentDashboard = ({ posts, events }: Props): JSX.Element => {
                 </Card>
               );
             })}
-
           <Button
             variant="secondary"
             className={styles.btn}
