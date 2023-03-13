@@ -40,8 +40,16 @@ interface Organization {
   route: string;
 }
 
+// Expected database schema
+interface Membership {
+  oid: string;
+  uid: string;
+  title: string;
+}
+
 interface Props {
   posts: Organization[];
+  memberships: Membership[];
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
@@ -59,16 +67,30 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     } as Organization);
   });
 
+  const membershipCollection = await collection(firestore, "memberships");
+  const membershipQuerySnapshot = await getDocs(membershipCollection);
+
+  const membershipsData: Membership[] = [];
+  membershipQuerySnapshot.forEach((doc) => {
+    const data = doc.data();
+    membershipsData.push({
+      oid: data.oid,
+      uid: data.uid,
+      title: data.title,
+    } as Membership);
+  });
+
   return {
-    props: { posts: postData },
+    props: { posts: postData, memberships: membershipsData },
   };
 };
 
-const OrganizationsPage = ({ posts }: Props): JSX.Element => {
+const OrganizationsPage = ({ posts, memberships }: Props): JSX.Element => {
   const router = useRouter();
   const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgDesc, setNewOrgDesc] = useState("");
+  const [newOrgOID, setNewOrgOID] = useState("");
 
   const backClick = () => {
     router.push("/StudentDashboard");
@@ -77,11 +99,20 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
   const handleAddOrg = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const orgCollection = collection(firestore, "organizations");
-    await addDoc(orgCollection, {
+    const docRef = await addDoc(orgCollection, {
       name: newOrgName,
       desc: newOrgDesc,
       route: null,
     });
+
+    const membershipCollection = collection(firestore, "memberships");
+    console.log(docRef.id);
+    await addDoc(membershipCollection, {
+      uid: currentUser?.uid,
+      title: "exec",
+      oid: docRef.id,
+    });
+
     setNewOrgName("");
     setNewOrgDesc("");
     router.push("/OrganizationsPage");
@@ -125,7 +156,16 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
                 >
                   <Card.Body>
                     <Card.Title>{post.name}</Card.Title>
-                    <Card.Text>{post.desc}<Card.Text/></Card.Text>
+                    <Card.Text>{post.desc}</Card.Text>
+                    <Card.Text>
+                      {memberships
+                        .filter(
+                          (membership: Membership) => post.id === membership.oid
+                        )
+                        .map((membership: Membership) => {
+                          return membership.uid;
+                        })}
+                    </Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">Request to join </Button>
                     </ButtonGroup>
@@ -154,7 +194,7 @@ const OrganizationsPage = ({ posts }: Props): JSX.Element => {
             </Form.Group>
 
             <Button variant="primary" type="submit">
-              Submit 
+              Submit
             </Button>
           </Form>
         </div>
