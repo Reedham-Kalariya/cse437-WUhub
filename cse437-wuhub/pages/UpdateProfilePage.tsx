@@ -1,22 +1,81 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, updateProfile } from "firebase/auth";
-import { init_firebase } from "@/firebase/firebase-config";
+import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/router";
+import { init_firebase } from "@/firebase/firebase-config";
 
 import Image from "next/image";
 import wuhub_logo from "../resources/wuhub_logo.png";
 import profile from "../resources/profile.webp";
-import React from "react";
+import { GetStaticProps, NextPage } from "next";
 
-import styles from "../styles/UpdateProfilePage.module.css";
+import styles from "../styles/ProfilePage.module.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Button from "react-bootstrap/Button";
+import { init_firebase_storage } from "../firebase/firebase-config";
 
-export default function UpdateProfilePage() {
+import Button from "react-bootstrap/Button";
+import {
+  getFirestore,
+  collection,
+  Firestore,
+  addDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  Timestamp,
+  DocumentReference,
+  updateDoc,
+} from "firebase/firestore";
+
+interface User {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  email: string
+}
+
+interface Props {
+  posts: User[];
+}
+
+const firestore = init_firebase_storage();
+
+export const getStaticProps: GetStaticProps<Props> = async () => {
+  const postsCollection = await collection(firestore, "users");
+  const postsQuerySnapshot = await getDocs(postsCollection);
+
+  const postData: User[] = [];
+  postsQuerySnapshot.forEach((doc) => {
+    const data = doc.data();
+
+    postData.push({
+      uid: data.uid,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email
+    } as User);
+  });
+
+  return {
+    props: { posts: postData },
+  };
+};
+
+// define the Student Dashboard functional component
+const UpdateProfilePage = ({ posts }: Props): JSX.Element => {
   // Initialize Firebase
-  const firebase = init_firebase();
-  const auth = getAuth();
+  const firebase = init_firebase(); // initialize the Firebase app
+  const auth = getAuth(); // get the authentication object
+
   let currentUser = auth.currentUser;
+  // Session Management
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = auth.currentUser;
+    } 
+  });
+
+  console.log(currentUser);
 
   const router = useRouter();
 
@@ -32,16 +91,13 @@ export default function UpdateProfilePage() {
 
   function updateProfile() {
     console.log("update profile initiaited");
-    let displayName = (
-      document.getElementById("display-name")! as HTMLInputElement
-    ).value;
     let profilePicURL = (
       document.getElementById("profile-pic-url")! as HTMLInputElement
     ).value;
-    console.log(displayName);
     console.log(profilePicURL);
   }
 
+  // render the Student Dashboard page
   return (
     <>
       <div className="header">
@@ -70,8 +126,12 @@ export default function UpdateProfilePage() {
             className={styles.profile}
           ></Image>
           <div>
+            <p> Name: {posts.filter((post) => post.uid === currentUser?.uid).map((post) => {
+              return (
+                post.firstName + " " + post.lastName
+              );
+            })} </p>
             <p> Email: {currentUser?.email} </p>
-            <p> Display Name: {currentUser?.displayName} </p>
             <p> Phone Number: {currentUser?.phoneNumber} </p>
             <p> Unique UID: {currentUser?.uid} </p>
             <br></br>
@@ -79,21 +139,19 @@ export default function UpdateProfilePage() {
               {" "}
               Update Profile{" "}
             </Button>
-            <p> Display Name </p>
-            <input type="text" id="display-name" className="text-box" />
-            <br></br>
             <p> Profile Pic URL </p>
             <input type="text" id="profile-pic-url" className="text-box" />
             <br></br>
-            <button onClick={() => updateProfile()} className="btn">
+            <Button onClick={updateProfile} className="btn">
               {" "}
               Register{" "}
-            </button>
+            </Button>
             <br></br>
           </div>
         </div>
       </div>
       <div className="update-profile-dialog-box"></div>
     </>
-  );
-}
+  )};
+
+export default UpdateProfilePage;

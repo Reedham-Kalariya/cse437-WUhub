@@ -6,14 +6,63 @@ import { init_firebase } from "@/firebase/firebase-config";
 import Image from "next/image";
 import wuhub_logo from "../resources/wuhub_logo.png";
 import profile from "../resources/profile.webp";
+import { GetStaticProps, NextPage } from "next";
 
 import styles from "../styles/ProfilePage.module.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { init_firebase_storage } from "../firebase/firebase-config";
 
 import Button from "react-bootstrap/Button";
+import {
+  getFirestore,
+  collection,
+  Firestore,
+  addDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  Timestamp,
+  DocumentReference,
+  updateDoc,
+} from "firebase/firestore";
+
+interface User {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  email: string
+}
+
+interface Props {
+  posts: User[];
+}
+
+const firestore = init_firebase_storage();
+
+export const getStaticProps: GetStaticProps<Props> = async () => {
+  const postsCollection = await collection(firestore, "users");
+  const postsQuerySnapshot = await getDocs(postsCollection);
+
+  const postData: User[] = [];
+  postsQuerySnapshot.forEach((doc) => {
+    const data = doc.data();
+
+    postData.push({
+      uid: data.uid,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email
+    } as User);
+  });
+
+  return {
+    props: { posts: postData },
+  };
+};
 
 // define the Student Dashboard functional component
-export default function ProfilePage() {
+const ProfilePage = ({ posts }: Props): JSX.Element => {
   // Initialize Firebase
   const firebase = init_firebase(); // initialize the Firebase app
   const auth = getAuth(); // get the authentication object
@@ -69,8 +118,12 @@ export default function ProfilePage() {
             className={styles.profile}
           ></Image>
           <div>
+            <p> Name: {posts.filter((post) => post.uid === currentUser?.uid).map((post) => {
+              return (
+                post.firstName + " " + post.lastName
+              );
+            })} </p>
             <p> Email: {currentUser?.email} </p>
-            <p> Display Name: {currentUser?.displayName} </p>
             <p> Phone Number: {currentUser?.phoneNumber} </p>
             <p> Unique UID: {currentUser?.uid} </p>
             <br></br>
@@ -82,5 +135,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </>
-  );
-}
+  )};
+
+export default ProfilePage;
