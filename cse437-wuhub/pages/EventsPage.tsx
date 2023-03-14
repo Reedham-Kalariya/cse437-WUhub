@@ -78,6 +78,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
   // Back click
   const router = useRouter();
+
   const backClick = () => {
     router.push("/StudentDashboard");
   };
@@ -85,7 +86,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
   const [events, setEvents] = useState(posts);
 
   // Variables for creating a new event
-  const [newEventID, setNewEventID] = useState("placeholder");
+  const [newEventID, setNewEventID] = useState("placeholder_for_database");
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventLocation, setNewEventLocation] = useState("");
   const [newEventPrivate, setNewEventPrivate] = useState(false);
@@ -95,10 +96,6 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
   // Edit variables
   const [editMode, setEditMode] = useState(false);
-  const [editEventID, setEditEventID] = useState("");
-
-
-  const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
 
   const addNewEvent = (newEvent: Event): void => {
     setEvents(prevEvents => [...prevEvents, newEvent]);
@@ -116,10 +113,12 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
   }
 
   // Handle the create/edit event area
-  const handleStagedEvent = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleStagedEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (editMode) {
+
+      console.log("The edit ID: " + newEventID);
 
       // Throw to local
       updateDoc(doc(firestore, "events", newEventID), {
@@ -137,7 +136,6 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
         if (index !== -1) {
           const updatedEvents = [...prevEvents];
           updatedEvents[index] = ({
-            id: newEventID,
             title: newEventTitle,
             location: newEventLocation,
             private: newEventPrivate,
@@ -158,18 +156,18 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
     // Throw at server
     const eventCollection = collection(firestore, "events");
-    addDoc(eventCollection, {
+    const docRef = await addDoc(eventCollection, {
       title: newEventTitle,
       location: newEventLocation,
       private: newEventPrivate,
       description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
-    });
+    })
 
     // Throw at local
     addNewEvent({
-      id: "placeholder_for_database",
+      id: docRef.id,
       title: newEventTitle,
       location: newEventLocation,
       private: newEventPrivate,
@@ -179,13 +177,18 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     } as Event)
 
     clearStagingArea();
-    
-    return;
 
+    return;
   };
 
 
   const handleEditMode = (post: Event) => {
+    console.log(post);
+
+    if (post.id == "placeholder_for_database_do_not_edit") {
+      return;
+    }
+
     setEditMode(true);
     setNewEventID(post.id);
     setNewEventTitle(post.title);
@@ -199,10 +202,10 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
 
   // Handle deleting an event
-  const handleDeleteEvent = async (postId: string) => {
-    await deleteDoc(doc(firestore, "events", postId));
-    setDeletedPostId(postId);
-    router.push("/EventsPage");
+  const handleDeleteEvent = async (id: string) => {
+    deleteDoc(doc(firestore, "events", id));
+    const updatedEvents = events.filter((event) => event.id !== id);
+    setEvents(updatedEvents);
   };
 
   return (
@@ -230,37 +233,35 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
         <div className={styles.currentEventsBox}>
           {events.map((post) => {
             return (
-              <>
-                <Card
-                  key={post.id}
-                  className={styles.event}
-                  style={{ width: "18rem" }}
-                >
-                  <Card.Body>
-                    <Card.Title>{post.title}</Card.Title>
-                    <Card.Text>
-                      {post.start} to {post.end}
-                    </Card.Text>
-                    <ButtonGroup aria-label="Basic example">
-                      <Button variant="secondary">RSVP</Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => handleEditMode(post)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        onClick={() => handleDeleteEvent(post.id)}
-                      >
-                        Delete
-                      </Button>
-                    </ButtonGroup>
-                  </Card.Body>
-                </Card>
-              </>
+              <Card
+                key={post.id}
+                className={styles.event}
+                style={{ width: "18rem" }}
+              >
+                <Card.Body>
+                  <Card.Title>{post.title}</Card.Title>
+                  <Card.Text>
+                    {post.start} to {post.end}
+                  </Card.Text>
+                  <ButtonGroup aria-label="Basic example">
+                    <Button variant="secondary">RSVP</Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => handleEditMode(post)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => handleDeleteEvent(post.id)}
+                    >
+                      Delete
+                    </Button>
+                  </ButtonGroup>
+                </Card.Body>
+              </Card>
             );
           })}
         </div>
