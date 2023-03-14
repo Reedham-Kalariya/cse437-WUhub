@@ -47,9 +47,18 @@ interface Membership {
   title: string;
 }
 
+// Expected database schema
+interface User {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 interface Props {
   posts: Organization[];
   memberships: Membership[];
+  users: User[];
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
@@ -80,12 +89,26 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     } as Membership);
   });
 
+  const userCollection = await collection(firestore, "users");
+  const userQuerySnapshot = await getDocs(userCollection);
+
+  const usersData: User[] = [];
+  userQuerySnapshot.forEach((doc) => {
+    const data = doc.data();
+    usersData.push({
+      uid: data.uid,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email
+    } as User);
+  });
+
   return {
-    props: { posts: postData, memberships: membershipsData },
+    props: { posts: postData, memberships: membershipsData, users: usersData },
   };
 };
 
-const OrganizationsPage = ({ posts, memberships }: Props): JSX.Element => {
+const OrganizationsPage = ({ posts, memberships, users }: Props): JSX.Element => {
   const router = useRouter();
   const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
   const [newOrgName, setNewOrgName] = useState("");
@@ -158,13 +181,11 @@ const OrganizationsPage = ({ posts, memberships }: Props): JSX.Element => {
                     <Card.Title>{post.name}</Card.Title>
                     <Card.Text>{post.desc}</Card.Text>
                     <Card.Text>
-                      {memberships
-                        .filter(
-                          (membership: Membership) => post.id === membership.oid
-                        )
-                        .map((membership: Membership) => {
-                          return membership.uid;
-                        })}
+                      {memberships.filter((membership: Membership) => post.id === membership.oid).map((membership: Membership) => {
+                        return users.filter((user: User) => membership.uid === user.uid).map((user:User) => {
+                          return user.firstName + " " + user.lastName;
+                        });
+                      })}
                     </Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">Request to join </Button>
