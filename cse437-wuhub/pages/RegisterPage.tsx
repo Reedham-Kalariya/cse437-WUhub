@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { GetStaticProps, NextPage } from "next";
 import React from "react";
 import * as ReactDOM from "react-dom";
 import {
@@ -18,18 +19,56 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { init_firebase_storage } from "../firebase/firebase-config";
 import { useRouter } from "next/router";
+import {
+  getFirestore,
+  collection,
+  Firestore,
+  addDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  Timestamp,
+  DocumentReference,
+  updateDoc,
+} from "firebase/firestore";
+
+const firebase = init_firebase(); // initialize the Firebase app
+const firestore = init_firebase_storage();
+const auth = getAuth(); // get the authentication object
+
+interface User {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  email: string
+}
+
+interface Props {
+  posts: User[];
+}
 
 // define the RegisterPage functional component
 export default function RegisterPage() {
-  // Initialize Firebase
-  const firebase = init_firebase(); // initialize the Firebase app
-  const auth = getAuth(); // get the authentication object
 
   const router = useRouter();
 
+  async function addUser(uid: string, firstName: string, lastName: string, email: string | null) {
+    const eventCollection = collection(firestore, "users");
+    await addDoc(eventCollection, {
+      uid: uid,
+      firstName: firstName,
+      lastName: lastName,
+      email: email
+    });
+  };
+
   async function register() {
     console.log("register initiaited"); // log that registration is being initiated
+    let firstName = (document.getElementById("register-firstName")! as HTMLInputElement).value;
+    let lastName = (document.getElementById("register-lastName")! as HTMLInputElement).value;
     let email = (document.getElementById("register-email")! as HTMLInputElement)
       .value; // get the email entered by the user
     let password = (
@@ -40,7 +79,7 @@ export default function RegisterPage() {
     createUserWithEmailAndPassword(auth, email, password) // create a user with email and password using the Firebase authentication object
       .then((userCredential) => {
         verifyEmail(userCredential).then(() => {
-          // router.push("./UpdateProfilePage");
+          addUser(userCredential.user.uid, firstName, lastName, userCredential.user.email)
         });
       })
       .catch((err) => {
@@ -129,6 +168,24 @@ export default function RegisterPage() {
         />
         <div className={styles.dialogBox} id="dialogBox">
           <Form>
+          <Form.Group className="mb-3">
+              <Form.Label>First Name</Form.Label>
+              <Form.Control
+                type="string"
+                placeholder="First Name"
+                id="register-firstName"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Last Name</Form.Label>
+              <Form.Control
+                type="string"
+                placeholder="Last Name"
+                id="register-lastName"
+              />
+            </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Email address</Form.Label>
               <Form.Control
