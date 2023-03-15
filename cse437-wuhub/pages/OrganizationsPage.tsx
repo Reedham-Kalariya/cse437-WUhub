@@ -45,6 +45,7 @@ interface Membership {
   oid: string;
   uid: string;
   title: string;
+  orgName: string;
 }
 
 // Expected database schema
@@ -86,6 +87,7 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
       oid: data.oid,
       uid: data.uid,
       title: data.title,
+      orgName: data.orgName,
     } as Membership);
   });
 
@@ -99,7 +101,7 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
       uid: data.uid,
       firstName: data.firstName,
       lastName: data.lastName,
-      email: data.email
+      email: data.email,
     } as User);
   });
 
@@ -108,7 +110,11 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
   };
 };
 
-const OrganizationsPage = ({ posts, memberships, users }: Props): JSX.Element => {
+const OrganizationsPage = ({
+  posts,
+  memberships,
+  users,
+}: Props): JSX.Element => {
   const router = useRouter();
   const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
   const [newOrgName, setNewOrgName] = useState("");
@@ -134,6 +140,7 @@ const OrganizationsPage = ({ posts, memberships, users }: Props): JSX.Element =>
       uid: currentUser?.uid,
       title: "exec",
       oid: docRef.id,
+      orgName: newOrgName
     });
 
     setNewOrgName("");
@@ -181,11 +188,17 @@ const OrganizationsPage = ({ posts, memberships, users }: Props): JSX.Element =>
                     <Card.Title>{post.name}</Card.Title>
                     <Card.Text>{post.desc}</Card.Text>
                     <Card.Text>
-                      {memberships.filter((membership: Membership) => post.id === membership.oid).map((membership: Membership) => {
-                        return users.filter((user: User) => membership.uid === user.uid).map((user:User) => {
-                          return user.firstName + " " + user.lastName;
-                        });
-                      })}
+                      {memberships
+                        .filter(
+                          (membership: Membership) => post.id === membership.oid
+                        )
+                        .map((membership: Membership) => {
+                          return users
+                            .filter((user: User) => membership.uid === user.uid)
+                            .map((user: User) => {
+                              return user.firstName + " " + user.lastName;
+                            });
+                        })}
                     </Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="secondary">Request to join </Button>

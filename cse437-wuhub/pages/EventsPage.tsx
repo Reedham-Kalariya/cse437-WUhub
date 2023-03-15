@@ -12,7 +12,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  Timestamp
+  Timestamp,
+  query,
+  where,
+  QuerySnapshot,
 } from "firebase/firestore";
 
 import Image from "next/image";
@@ -29,6 +32,7 @@ const auth = getAuth(); // get the authentication object
 const firestore = init_firebase_storage();
 
 let currentUser = auth.currentUser;
+let currentUserUID = currentUser?.uid;
 
 // Expected database schema
 interface Event {
@@ -39,13 +43,11 @@ interface Event {
   description: string;
   start: string;
   end: string;
-
 }
 
 interface Props {
   posts: Event[];
 }
-
 
 // Load existing events
 export const getStaticProps: GetStaticProps<Props> = async () => {
@@ -72,11 +74,8 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
   };
 };
 
-
-
 // EventPage Object
 const EventsPage = ({ posts }: Props): JSX.Element => {
-
   // Back click
   const router = useRouter();
 
@@ -94,13 +93,24 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
   const [newEventDescription, setNewEventDescription] = useState("");
   const [newEventStart, setNewEventStart] = useState("");
   const [newEventEnd, setNewEventEnd] = useState("");
+  const [newEventAssociatedOrg, setNewEventAssociatedOrg] = useState("");
 
   // Edit variables
   const [editMode, setEditMode] = useState(false);
 
+  // Define a state variable to hold the orgs
+  const [orgs, setOrgs] = useState<string[][]>([]);
+
+  // Use useEffect to fetch the orgs when the component mounts
+  useEffect(() => {
+    if (currentUserUID) {
+      getOrgsOfUser(currentUserUID).then(setOrgs);
+    }
+  }, [currentUserUID]);
+
   const addNewEvent = (newEvent: Event): void => {
-    setEvents(prevEvents => [...prevEvents, newEvent]);
-  }
+    setEvents((prevEvents) => [...prevEvents, newEvent]);
+  };
 
   const clearStagingArea = () => {
     setEditMode(false);
@@ -111,14 +121,13 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     setNewEventPrivate(false);
     setNewEventStart("");
     setNewEventEnd("");
-  }
+  };
 
   // Handle the create/edit event area
   const handleStagedEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (editMode) {
-
       console.log("The edit ID: " + newEventID);
 
       // Throw to local
@@ -132,18 +141,18 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       });
 
       // Throw to local
-      setEvents(prevEvents => {
-        const index = prevEvents.findIndex(event => event.id === newEventID);
+      setEvents((prevEvents) => {
+        const index = prevEvents.findIndex((event) => event.id === newEventID);
         if (index !== -1) {
           const updatedEvents = [...prevEvents];
-          updatedEvents[index] = ({
+          updatedEvents[index] = {
             title: newEventTitle,
             location: newEventLocation,
             private: newEventPrivate,
             description: newEventDescription,
             start: newEventStart,
             end: newEventEnd,
-          } as Event);
+          } as Event;
           return updatedEvents;
         }
         // if the event with the given ID is not found, return the original array
@@ -164,7 +173,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
-    })
+    });
 
     // Throw at local
     addNewEvent({
@@ -175,13 +184,12 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
-    } as Event)
+    } as Event);
 
     clearStagingArea();
 
     return;
   };
-
 
   const handleEditMode = (post: Event) => {
     console.log(post);
@@ -198,9 +206,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     setNewEventPrivate(post.private);
     setNewEventStart(post.start);
     setNewEventEnd(post.end);
-  }
-
-
+  };
 
   // Handle deleting an event
   const handleDeleteEvent = async (id: string) => {
@@ -209,9 +215,23 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     setEvents(updatedEvents);
   };
 
+  // Get organizations for which the user is an exec
+  const getOrgsOfUser = async (uid: string | undefined) => {
+    let orgs: string[][] = [];
+    const q = query(
+      collection(firestore, "memberships"),
+      where("uid", "==", uid)
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      orgs.push([doc.data().oid, doc.data().orgName]);
+    });
+    console.log(orgs);
+    return orgs;
+  };
+
   return (
     <>
-
       <div className="header">
         <div className="headerLeft">
           <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
@@ -220,7 +240,6 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
           <div id="profile-button">{currentUser?.email}</div>
         </div>
       </div>
-
 
       <Button
         variant="secondary"
@@ -260,6 +279,13 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                     >
                       Delete
                     </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => getOrgsOfUser(currentUserUID)}
+                    >
+                      Get
+                    </Button>
                   </ButtonGroup>
                 </Card.Body>
               </Card>
@@ -279,18 +305,18 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Location</Form.Label>
-              <Form.Control
-                value={newEventLocation}
-                onChange={(e) => setNewEventLocation(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
                 value={newEventDescription}
                 onChange={(e) => setNewEventDescription(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Location</Form.Label>
+              <Form.Control
+                value={newEventLocation}
+                onChange={(e) => setNewEventLocation(e.target.value)}
               />
             </Form.Group>
 
@@ -304,19 +330,12 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Location</Form.Label>
-              <Form.Control
-                value={newEventLocation}
-                onChange={(e) => setNewEventLocation(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                value={newEventDescription}
-                onChange={(e) => setNewEventDescription(e.target.value)}
-              />
+              <Form.Label>Associated Organization</Form.Label>
+              <Form.Select onChange={(e) => setNewEventAssociatedOrg(e.target.value)}>
+                {orgs.map((org) => (
+                  <option> {org[1]} </option>
+                ))}
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -344,7 +363,6 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                 Close Edit Mode
               </Button>
             )}
-
           </Form>
         </div>
       </div>
