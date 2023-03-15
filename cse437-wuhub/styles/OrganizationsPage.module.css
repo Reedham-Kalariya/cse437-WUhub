@@ -1,6 +1,7 @@
 .mainContent {
+    padding-top: 50px;
     width: 100%;
-    height: 600px;
+    height: 100%;
     background-color: #eeeeee;
     display: flex;
     align-items: center;
@@ -17,7 +18,7 @@
 .currentOrgsBox {
     width: 60%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: wrap;
 }
 
@@ -29,5 +30,6 @@
 }
 
 .org {
+    margin-right: 5px;
     margin-bottom: 5px;
 }
