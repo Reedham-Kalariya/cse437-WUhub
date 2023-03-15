@@ -9,14 +9,11 @@ export default async function handler(
 ) {
     const id = req.query.id as string;
     
-<<<<<<< HEAD
-=======
     console.log(id);
->>>>>>> dev-branch
     const firestore = init_firebase_storage();
 
     // Get document by ID
-    const docRef = doc(firestore, "events/" + id);
+    const docRef = doc(firestore, "organizations/" + id);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
