@@ -43,6 +43,8 @@ interface Event {
   description: string;
   start: string;
   end: string;
+  associatedOrgName: string;
+  associatedOrgID: string;
 }
 
 interface Props {
@@ -66,6 +68,8 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
       description: data.description,
       start: data.start,
       end: data.end,
+      associatedOrgName: data.associatedOrgName,
+      associatedOrgID: data.associatedOrgID,
     } as Event);
   });
 
@@ -93,13 +97,15 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
   const [newEventDescription, setNewEventDescription] = useState("");
   const [newEventStart, setNewEventStart] = useState("");
   const [newEventEnd, setNewEventEnd] = useState("");
-  const [newEventAssociatedOrg, setNewEventAssociatedOrg] = useState("");
+  const [newEventAssociatedOrgName, setNewEventAssociatedOrgName] =
+    useState("");
+  const [newEventAssociatedOrgID, setNewEventAssociatedOrgID] = useState("");
 
   // Edit variables
   const [editMode, setEditMode] = useState(false);
 
   // Define a state variable to hold the orgs
-  const [orgs, setOrgs] = useState<string[][]>([]);
+  const [orgs, setOrgs] = useState(new Map());
 
   // Use useEffect to fetch the orgs when the component mounts
   useEffect(() => {
@@ -121,6 +127,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     setNewEventPrivate(false);
     setNewEventStart("");
     setNewEventEnd("");
+    setNewEventAssociatedOrgName("");
+    setNewEventAssociatedOrgID("");
   };
 
   // Handle the create/edit event area
@@ -138,6 +146,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
         description: newEventDescription,
         start: newEventStart,
         end: newEventEnd,
+        associatedOrgName: newEventAssociatedOrgName,
+        setNewEventAssociatedOrgID: newEventAssociatedOrgID,
       });
 
       // Throw to local
@@ -152,6 +162,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
             description: newEventDescription,
             start: newEventStart,
             end: newEventEnd,
+            associatedOrgName: newEventAssociatedOrgName,
           } as Event;
           return updatedEvents;
         }
@@ -173,6 +184,14 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
+      associatedOrgName: newEventAssociatedOrgName,
+      associatedOrgID: newEventAssociatedOrgID,
+    });
+
+    const hostsCollection = collection(firestore, "hosts");
+    const docRef2 = await addDoc(hostsCollection, {
+      oid: newEventAssociatedOrgID,
+      eid: docRef.id
     });
 
     // Throw at local
@@ -184,6 +203,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
       description: newEventDescription,
       start: newEventStart,
       end: newEventEnd,
+      associatedOrgName: newEventAssociatedOrgName,
+      associatedOrgID: newEventAssociatedOrgID,
     } as Event);
 
     clearStagingArea();
@@ -206,6 +227,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     setNewEventPrivate(post.private);
     setNewEventStart(post.start);
     setNewEventEnd(post.end);
+    setNewEventAssociatedOrgName(post.associatedOrgName);
+    setNewEventAssociatedOrgID(post.associatedOrgID);
   };
 
   // Handle deleting an event
@@ -217,19 +240,19 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
   // Handle deleting an event
   const handleViewEvent = async (id: string) => {
-    router.push('/event/' + id)
+    router.push("/event/" + id);
   };
 
   // Get organizations for which the user is an exec
   const getOrgsOfUser = async (uid: string | undefined) => {
-    let orgs: string[][] = [];
+    let orgs = new Map<string, string>();
     const q = query(
       collection(firestore, "memberships"),
       where("uid", "==", uid)
     );
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((doc) => {
-      orgs.push([doc.data().oid, doc.data().orgName]);
+      orgs.set(doc.data().orgName, doc.data().oid);
     });
     console.log(orgs);
     return orgs;
@@ -267,6 +290,8 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                   <Card.Title>{post.title}</Card.Title>
                   <Card.Text>
                     {post.start} to {post.end}
+                    <br></br>
+                    {post.associatedOrgName}
                   </Card.Text>
                   <ButtonGroup aria-label="Basic example">
                     <Button
@@ -290,13 +315,6 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                       onClick={() => handleDeleteEvent(post.id)}
                     >
                       Delete
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      onClick={() => getOrgsOfUser(currentUserUID)}
-                    >
-                      Get
                     </Button>
                   </ButtonGroup>
                 </Card.Body>
@@ -343,9 +361,15 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
 
             <Form.Group className="mb-3">
               <Form.Label>Associated Organization</Form.Label>
-              <Form.Select onChange={(e) => setNewEventAssociatedOrg(e.target.value)}>
-                {orgs.map((org) => (
-                  <option> {org[1]} </option>
+              <Form.Select
+                onChange={(e) => {
+                  setNewEventAssociatedOrgName(e.target.value);
+                  setNewEventAssociatedOrgID(orgs.get(e.target.value))
+                }}
+              >
+                <option> Select One </option>
+                {Array.from(orgs.entries()).map(([key, value]) => (
+                  <option key={key}>{key}</option>
                 ))}
               </Form.Select>
             </Form.Group>
