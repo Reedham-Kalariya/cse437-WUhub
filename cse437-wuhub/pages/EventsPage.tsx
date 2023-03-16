@@ -1,21 +1,21 @@
-import React, { useState, useEffect, ReactElement } from "react";
+import React, {useState, useEffect, ReactElement} from "react";
 import * as ReactDOM from "react-dom";
-import { GetStaticProps, NextPage } from "next";
-import { useRouter } from "next/router";
-import { getAuth } from "firebase/auth";
-import { init_firebase } from "@/firebase/firebase-config";
-import { init_firebase_storage } from "../firebase/firebase-config";
+import {GetStaticProps, NextPage} from "next";
+import {useRouter} from "next/router";
+import {getAuth} from "firebase/auth";
+import {init_firebase} from "@/firebase/firebase-config";
+import {init_firebase_storage} from "../firebase/firebase-config";
 import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  Timestamp,
-  query,
-  where,
-  QuerySnapshot,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    updateDoc,
+    Timestamp,
+    query,
+    where,
+    QuerySnapshot,
 } from "firebase/firestore";
 
 import Image from "next/image";
@@ -29,345 +29,362 @@ import styles from "../styles/EventsPage.module.css";
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
-const firestore = init_firebase_storage();
+const firestore = init_firebase_storage(); // initialize Firestore database
 
-let currentUser = auth.currentUser;
-let currentUserUID = currentUser?.uid;
+let currentUser = auth.currentUser;      // get the current user from auth object
+let currentUserUID = currentUser?.uid;  // get the current user's unique ID from the user object
 
-// Expected database schema
+// Expected database schemas
 interface Event {
-  id: string;
-  title: string;
-  location: string;
-  private: boolean;
-  description: string;
-  start: string;
-  end: string;
+    id: string;
+    title: string;
+    location: string;
+    private: boolean;
+    description: string;
+    start: string;
+    end: string;
+    associatedOrg: string;
 }
 
 interface Props {
-  posts: Event[];
+    posts: Event[];
 }
 
 // Load existing events
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  const postsCollection = await collection(firestore, "events");
-  const postsQuerySnapshot = await getDocs(postsCollection);
+    const postsCollection = await collection(firestore, "events");
+    const postsQuerySnapshot = await getDocs(postsCollection);
 
-  const postData: Event[] = [];
-  postsQuerySnapshot.forEach((doc) => {
-    const data = doc.data();
+    const postData: Event[] = [];
+    postsQuerySnapshot.forEach((doc) => {
+        const data = doc.data();
 
-    postData.push({
-      id: doc.id,
-      title: data.title,
-      location: data.location,
-      private: data.private,
-      description: data.description,
-      start: data.start,
-      end: data.end,
-    } as Event);
-  });
+        postData.push({
+            id: doc.id,
+            title: data.title,
+            location: data.location,
+            private: data.private,
+            description: data.description,
+            start: data.start,
+            end: data.end,
+            associatedOrg: data.associatedOrg
+        } as Event);
+    });
 
-  return {
-    props: { posts: postData },
-  };
+    return {
+        props: {posts: postData},
+    };
 };
 
 // EventPage Object
-const EventsPage = ({ posts }: Props): JSX.Element => {
-  // Back click
-  const router = useRouter();
+const EventsPage = ({posts}: Props): JSX.Element => {
+    const router = useRouter();
+    const backClick = () => {
+        router.push("/StudentDashboard");
+    };
 
-  const backClick = () => {
-    router.push("/StudentDashboard");
-  };
+    const [events, setEvents] = useState(posts);
 
-  const [events, setEvents] = useState(posts);
+    // Variables for creating a new event
+    const [newEventID, setNewEventID] = useState("placeholder_for_database");
+    const [newEventTitle, setNewEventTitle] = useState("");
+    const [newEventLocation, setNewEventLocation] = useState("");
+    const [newEventPrivate, setNewEventPrivate] = useState(false);
+    const [newEventDescription, setNewEventDescription] = useState("");
+    const [newEventStart, setNewEventStart] = useState("");
+    const [newEventEnd, setNewEventEnd] = useState("");
+    const [newEventAssociatedOrg, setNewEventAssociatedOrg] = useState("");
 
-  // Variables for creating a new event
-  const [newEventID, setNewEventID] = useState("placeholder_for_database");
-  const [newEventTitle, setNewEventTitle] = useState("");
-  const [newEventLocation, setNewEventLocation] = useState("");
-  const [newEventPrivate, setNewEventPrivate] = useState(false);
-  const [newEventDescription, setNewEventDescription] = useState("");
-  const [newEventStart, setNewEventStart] = useState("");
-  const [newEventEnd, setNewEventEnd] = useState("");
-  const [newEventAssociatedOrg, setNewEventAssociatedOrg] = useState("");
+    // Edit variables
+    const [editMode, setEditMode] = useState(false);
 
-  // Edit variables
-  const [editMode, setEditMode] = useState(false);
+    // Define a state variable to hold the orgs
+    const [orgs, setOrgs] = useState<string[][]>([]);
 
-  // Define a state variable to hold the orgs
-  const [orgs, setOrgs] = useState<string[][]>([]);
+    // Use useEffect to fetch the orgs when the component mounts
+    useEffect(() => {
+        if (currentUserUID) {
+            getOrgsOfUser(currentUserUID).then(setOrgs);
+        }
+    }, [currentUserUID]);
 
-  // Use useEffect to fetch the orgs when the component mounts
-  useEffect(() => {
-    if (currentUserUID) {
-      getOrgsOfUser(currentUserUID).then(setOrgs);
-    }
-  }, [currentUserUID]);
+    const addNewEvent = (newEvent: Event): void => {
+        setEvents((prevEvents) => [...prevEvents, newEvent]);
+    };
 
-  const addNewEvent = (newEvent: Event): void => {
-    setEvents((prevEvents) => [...prevEvents, newEvent]);
-  };
+    const clearStagingArea = () => {
+        setEditMode(false);
+        setNewEventID("placeholder_for_database");
+        setNewEventTitle("");
+        setNewEventLocation("");
+        setNewEventDescription("");
+        setNewEventPrivate(false);
+        setNewEventStart("");
+        setNewEventEnd("");
+    };
 
-  const clearStagingArea = () => {
-    setEditMode(false);
-    setNewEventID("placeholder_for_database");
-    setNewEventTitle("");
-    setNewEventLocation("");
-    setNewEventDescription("");
-    setNewEventPrivate(false);
-    setNewEventStart("");
-    setNewEventEnd("");
-  };
+    // Handle the create/edit event area
+    const handleStagedEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
 
-  // Handle the create/edit event area
-  const handleStagedEvent = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+        if (editMode) {
+            console.log("The edit ID: " + newEventID);
 
-    if (editMode) {
-      console.log("The edit ID: " + newEventID);
+            // Throw to local
+            updateDoc(doc(firestore, "events", newEventID), {
+                title: newEventTitle,
+                location: newEventLocation,
+                private: newEventPrivate,
+                description: newEventDescription,
+                start: newEventStart,
+                end: newEventEnd,
+                associatedOrg: newEventAssociatedOrg
+            });
 
-      // Throw to local
-      updateDoc(doc(firestore, "events", newEventID), {
-        title: newEventTitle,
-        location: newEventLocation,
-        private: newEventPrivate,
-        description: newEventDescription,
-        start: newEventStart,
-        end: newEventEnd,
-      });
+            // Throw to local
+            setEvents((prevEvents) => {
+                const index = prevEvents.findIndex((event) => event.id === newEventID);
+                if (index !== -1) {
+                    const updatedEvents = [...prevEvents];
+                    updatedEvents[index] = {
+                        title: newEventTitle,
+                        location: newEventLocation,
+                        private: newEventPrivate,
+                        description: newEventDescription,
+                        start: newEventStart,
+                        end: newEventEnd,
+                        associatedOrg: newEventAssociatedOrg
+                    } as Event;
+                    return updatedEvents;
+                }
+                // if the event with the given ID is not found, return the original array
+                return prevEvents;
+            });
 
-      // Throw to local
-      setEvents((prevEvents) => {
-        const index = prevEvents.findIndex((event) => event.id === newEventID);
-        if (index !== -1) {
-          const updatedEvents = [...prevEvents];
-          updatedEvents[index] = {
+            clearStagingArea();
+
+            return;
+        }
+
+        // Throw at server
+        const eventCollection = collection(firestore, "events");
+        const docRef = await addDoc(eventCollection, {
             title: newEventTitle,
             location: newEventLocation,
             private: newEventPrivate,
             description: newEventDescription,
             start: newEventStart,
             end: newEventEnd,
-          } as Event;
-          return updatedEvents;
+            associatedOrg: newEventAssociatedOrg
+        });
+
+        const hostsCollection = collection(firestore, "hosts");
+        // Isolating OID
+        const firstParenthesis = newEventAssociatedOrg.indexOf("(");
+        const secondParenthesis = newEventAssociatedOrg.indexOf(")");
+        const decRef2 = await addDoc(hostsCollection, {
+            oid: newEventAssociatedOrg.substring(firstParenthesis+1, secondParenthesis),
+            eid: docRef.id
+        })
+
+        // Throw at local
+        addNewEvent({
+            id: docRef.id,
+            title: newEventTitle,
+            location: newEventLocation,
+            private: newEventPrivate,
+            description: newEventDescription,
+            start: newEventStart,
+            end: newEventEnd,
+            associatedOrg: newEventAssociatedOrg
+        } as Event);
+
+        clearStagingArea();
+
+        return;
+    };
+
+    const handleEditMode = (post: Event) => {
+        console.log(post);
+
+        if (post.id == "placeholder_for_database_do_not_edit") {
+            return;
         }
-        // if the event with the given ID is not found, return the original array
-        return prevEvents;
-      });
 
-      clearStagingArea();
+        setEditMode(true);
+        setNewEventID(post.id);
+        setNewEventTitle(post.title);
+        setNewEventLocation(post.location);
+        setNewEventDescription(post.description);
+        setNewEventPrivate(post.private);
+        setNewEventStart(post.start);
+        setNewEventEnd(post.end);
+        setNewEventAssociatedOrg(post.associatedOrg)
+    };
 
-      return;
-    }
+    // Handle deleting an event
+    const handleDeleteEvent = async (id: string) => {
+        deleteDoc(doc(firestore, "events", id));
+        const updatedEvents = events.filter((event) => event.id !== id);
+        setEvents(updatedEvents);
+    };
 
-    // Throw at server
-    const eventCollection = collection(firestore, "events");
-    const docRef = await addDoc(eventCollection, {
-      title: newEventTitle,
-      location: newEventLocation,
-      private: newEventPrivate,
-      description: newEventDescription,
-      start: newEventStart,
-      end: newEventEnd,
-    });
+    // Get organizations for which the user is an exec
+    const getOrgsOfUser = async (uid: string | undefined) => {
+        let orgs: string[][] = [];
+        const q = query(
+            collection(firestore, "memberships"),
+            where("uid", "==", uid)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            orgs.push([doc.data().oid, doc.data().orgName]);
+        });
+        console.log(orgs);
+        return orgs;
+    };
 
-    // Throw at local
-    addNewEvent({
-      id: docRef.id,
-      title: newEventTitle,
-      location: newEventLocation,
-      private: newEventPrivate,
-      description: newEventDescription,
-      start: newEventStart,
-      end: newEventEnd,
-    } as Event);
+    return (
+        <>
+            <div className="header">
+                <div className="headerLeft">
+                    <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo"/>
+                </div>
+                <div className="headerRight">
+                    <div id="profile-button">{currentUser?.email}</div>
+                </div>
+            </div>
 
-    clearStagingArea();
-
-    return;
-  };
-
-  const handleEditMode = (post: Event) => {
-    console.log(post);
-
-    if (post.id == "placeholder_for_database_do_not_edit") {
-      return;
-    }
-
-    setEditMode(true);
-    setNewEventID(post.id);
-    setNewEventTitle(post.title);
-    setNewEventLocation(post.location);
-    setNewEventDescription(post.description);
-    setNewEventPrivate(post.private);
-    setNewEventStart(post.start);
-    setNewEventEnd(post.end);
-  };
-
-  // Handle deleting an event
-  const handleDeleteEvent = async (id: string) => {
-    deleteDoc(doc(firestore, "events", id));
-    const updatedEvents = events.filter((event) => event.id !== id);
-    setEvents(updatedEvents);
-  };
-
-  // Get organizations for which the user is an exec
-  const getOrgsOfUser = async (uid: string | undefined) => {
-    let orgs: string[][] = [];
-    const q = query(
-      collection(firestore, "memberships"),
-      where("uid", "==", uid)
-    );
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      orgs.push([doc.data().oid, doc.data().orgName]);
-    });
-    console.log(orgs);
-    return orgs;
-  };
-
-  return (
-    <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button">{currentUser?.email}</div>
-        </div>
-      </div>
-
-      <Button
-        variant="secondary"
-        onClick={backClick}
-        className={styles.backToLandingBtn}
-      >
-        <strong>&lt;</strong> Back to Home
-      </Button>
-
-      <div className={styles.mainContent}>
-        <div className={styles.currentEventsBox}>
-          {events.map((post) => {
-            return (
-              <Card
-                key={post.id}
-                className={styles.event}
-                style={{ width: "18rem" }}
-              >
-                <Card.Body>
-                  <Card.Title>{post.title}</Card.Title>
-                  <Card.Text>
-                    {post.start} to {post.end}
-                  </Card.Text>
-                  <ButtonGroup aria-label="Basic example">
-                    <Button variant="secondary">RSVP</Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => handleEditMode(post)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      onClick={() => handleDeleteEvent(post.id)}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      onClick={() => getOrgsOfUser(currentUserUID)}
-                    >
-                      Get
-                    </Button>
-                  </ButtonGroup>
-                </Card.Body>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className={styles.addEventsBox} id="addEventsBox">
-          <h1>{editMode ? "Edit an Event" : "Make a New Event"}</h1>
-          <Form onSubmit={(e) => handleStagedEvent(e)}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                value={newEventTitle}
-                onChange={(e) => setNewEventTitle(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                value={newEventDescription}
-                onChange={(e) => setNewEventDescription(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Location</Form.Label>
-              <Form.Control
-                value={newEventLocation}
-                onChange={(e) => setNewEventLocation(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                label="Private"
-                type="checkbox"
-                checked={newEventPrivate}
-                onChange={(e) => setNewEventPrivate(e.target.checked)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Associated Organization</Form.Label>
-              <Form.Select onChange={(e) => setNewEventAssociatedOrg(e.target.value)}>
-                {orgs.map((org) => (
-                  <option> {org[1]} </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Start Time</Form.Label>
-              <Form.Control
-                value={newEventStart}
-                onChange={(e) => setNewEventStart(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>End Time</Form.Label>
-              <Form.Control
-                value={newEventEnd}
-                onChange={(e) => setNewEventEnd(e.target.value)}
-              />
-            </Form.Group>
-
-            <Button variant={editMode ? "warning" : "primary"} type="submit">
-              {editMode ? "Edit Event" : "Add Event"}
+            <Button
+                variant="secondary"
+                onClick={backClick}
+                className={styles.backToLandingBtn}
+            >
+                <strong>&lt;</strong> Back to Home
             </Button>
 
-            {editMode && (
-              <Button variant="light" type="button" onClick={clearStagingArea}>
-                Close Edit Mode
-              </Button>
-            )}
-          </Form>
-        </div>
-      </div>
-    </>
-  );
+            <div className={styles.mainContent}>
+                <div className={styles.currentEventsBox}>
+                    {events.map((post) => {
+                        return (
+                            <Card
+                                key={post.id}
+                                className={styles.event}
+                                style={{width: "18rem"}}
+                            >
+                                <Card.Body>
+                                    <Card.Title>{post.title}</Card.Title>
+                                    <Card.Text>{post.description}</Card.Text>
+                                    <Card.Text>
+                                        {post.start} to {post.end}
+                                        <br></br>
+                                        {post.location}
+                                        <br></br>
+                                        {post.private ? "Private" : "Public"}
+                                        <br></br>
+                                        {post.associatedOrg}
+                                    </Card.Text>
+                                    <Card.Text>
+
+                                    </Card.Text>
+                                    <ButtonGroup aria-label="Basic example">
+                                        <Button variant="secondary">RSVP</Button>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            onClick={() => handleEditMode(post)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="danger"
+                                            onClick={() => handleDeleteEvent(post.id)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </ButtonGroup>
+                                </Card.Body>
+                            </Card>
+                        );
+                    })}
+                </div>
+
+                <div className={styles.addEventsBox} id="addEventsBox">
+                    <h1>{editMode ? "Edit an Event" : "Make a New Event"}</h1>
+                    <Form onSubmit={(e) => handleStagedEvent(e)}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Name</Form.Label>
+                            <Form.Control
+                                value={newEventTitle}
+                                onChange={(e) => setNewEventTitle(e.target.value)}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description</Form.Label>
+                            <Form.Control
+                                value={newEventDescription}
+                                onChange={(e) => setNewEventDescription(e.target.value)}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Location</Form.Label>
+                            <Form.Control
+                                value={newEventLocation}
+                                onChange={(e) => setNewEventLocation(e.target.value)}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Check
+                                label="Private"
+                                type="checkbox"
+                                checked={newEventPrivate}
+                                onChange={(e) => setNewEventPrivate(e.target.checked)}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Associated Organization</Form.Label>
+                            <Form.Select onChange={(e) => setNewEventAssociatedOrg(e.target.value)}>
+                                {orgs.map((org) => (
+                                    <option> {org[1] + " (" + org[0] + ")"} </option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Start Time</Form.Label>
+                            <Form.Control
+                                value={newEventStart}
+                                onChange={(e) => setNewEventStart(e.target.value)}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>End Time</Form.Label>
+                            <Form.Control
+                                value={newEventEnd}
+                                onChange={(e) => setNewEventEnd(e.target.value)}
+                            />
+                        </Form.Group>
+
+                        <Button variant={editMode ? "warning" : "primary"} type="submit">
+                            {editMode ? "Edit Event" : "Add Event"}
+                        </Button>
+
+                        {editMode && (
+                            <Button variant="light" type="button" onClick={clearStagingArea}>
+                                Close Edit Mode
+                            </Button>
+                        )}
+                    </Form>
+                </div>
+            </div>
+        </>
+    );
 };
 
 export default EventsPage;

@@ -18,7 +18,7 @@ import {
   browserSessionPersistence
 } from "firebase/auth";
 
-// import the Firebase Firebase Storage SDK functions
+// import the Firebase Storage SDK functions
 import { ref, getDownloadURL } from "firebase/storage";
 
 // Firestore
@@ -49,7 +49,7 @@ export default function LoginPage() {
 
   // define the login function that gets called when the user clicks the "Login" button
   function login() {
-    console.log("login initiatied");
+    console.log("login initiated");
     // get the user's email and password from the input fields
     let email = (document.getElementById("login-email")! as HTMLInputElement)
       .value;
