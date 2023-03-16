@@ -45,8 +45,14 @@ interface Event {
   end: string;
 }
 
+interface RSVP{
+  uid: string;
+  eid: string;
+}
+
 interface Props {
   posts: Event[];
+  rsvps: RSVP[];
 }
 
 // Load existing events
@@ -69,13 +75,26 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
     } as Event);
   });
 
+  const postsCollectionRSVP = await collection(firestore, "rsvp");
+  const postsQuerySnapshotRSVP = await getDocs(postsCollectionRSVP);
+
+  const postDataRSVP: RSVP[] = [];
+  postsQuerySnapshotRSVP.forEach((doc) => {
+    const data = doc.data();
+
+    postDataRSVP.push({
+      uid: data.uid,
+      eid: data.eid
+    } as RSVP);
+  });
+
   return {
-    props: { posts: postData },
+    props: { posts: postData, rsvps: postDataRSVP },
   };
 };
 
 // EventPage Object
-const EventsPage = ({ posts }: Props): JSX.Element => {
+const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
   // Back click
   const router = useRouter();
 
@@ -235,6 +254,37 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
     return orgs;
   };
 
+  async function rsvp(eventid: string){
+    const userid = currentUser?.uid;
+    const rsvpCollection = collection(firestore, "rsvp");
+    console.log(userid);
+    let i = 0;
+    rsvps.filter((rsvp: RSVP) => rsvp.eid === eventid).filter((rsvp: RSVP) => rsvp.uid === userid).map((rsvp: RSVP) => {
+      i = i + 1;
+      return;
+    });
+    console.log("number of rsvps with same uid: " + i + " and userid: " + userid);
+    
+    //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
+    if(i === 0){
+      if(typeof(userid) !== "undefined"){
+        const membershipCollection = collection(firestore, "rsvp");
+        await addDoc(membershipCollection, {
+          uid: userid,
+          eid: eventid
+        });
+        alert("You have successfully RSVPed");
+      }
+      else{
+        alert("Please sign in to RSVP");
+      }
+    }
+    else{
+      alert("You have already RSVPed to this event");
+    }
+
+  }
+
   return (
     <>
       <div className="header">
@@ -276,7 +326,7 @@ const EventsPage = ({ posts }: Props): JSX.Element => {
                     >
                       View
                     </Button>
-                    <Button variant="secondary">RSVP</Button>
+                    <Button variant="secondary" onClick={() => rsvp(post.id)}>RSVP</Button>
                     <Button
                       type="button"
                       variant="secondary"

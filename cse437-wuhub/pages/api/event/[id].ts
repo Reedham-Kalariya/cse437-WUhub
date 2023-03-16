@@ -9,10 +9,7 @@ export default async function handler(
 ) {
     const id = req.query.id as string;
     
-<<<<<<< HEAD
-=======
     console.log(id);
->>>>>>> dev-branch
     const firestore = init_firebase_storage();
 
     // Get document by ID

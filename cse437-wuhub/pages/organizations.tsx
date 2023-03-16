@@ -133,20 +133,55 @@ const OrganizationsPage = ({
       desc: newOrgDesc,
       route: null,
     });
-
-    const membershipCollection = collection(firestore, "memberships");
-    console.log(docRef.id);
-    await addDoc(membershipCollection, {
-      uid: currentUser?.uid,
-      title: "exec",
-      oid: docRef.id,
-      orgName: newOrgName
-    });
+    const userid = currentUser?.uid;
+    console.log(userid);
+    if(typeof(userid) !== "undefined"){
+      const membershipCollection = collection(firestore, "memberships");
+      console.log(docRef.id);
+      await addDoc(membershipCollection, {
+        uid: currentUser?.uid,
+        title: "exec",
+        oid: docRef.id,
+        orgName: newOrgName
+      });
+    }
+    else{
+      alert("Please sign in to make an organization");
+    }
+    
 
     setNewOrgName("");
     setNewOrgDesc("");
-    router.push("/OrganizationsPage");
+    router.push("/organizations");
   };
+
+  async function joinOrg(oid: string, name: string){
+    const membershipCollection = collection(firestore, "memberships");
+    const userid = currentUser?.uid;
+    let i = 0;
+    memberships.filter((membership: Membership) => membership.oid === oid).filter((membership: Membership) => membership.uid === userid).map((membership: Membership) => {
+      i = i + 1;
+      return;
+    });
+    console.log("number of members with same uid: " + i + " and userid: " + userid);
+    
+    //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
+
+    if(i === 0){
+      if(typeof(userid) !== "undefined"){
+        await addDoc(membershipCollection, {
+          uid: userid,
+          title: "member",
+          oid: oid,
+          orgName: name
+        });
+        alert("You have successfully joined " + name);
+      } 
+    }
+    else{
+      alert("You are already part of this organization");
+    }
+  }
 
   const handleDeleteOrg = async (postId: string) => {
     await deleteDoc(doc(firestore, "organizations", postId));
@@ -196,12 +231,14 @@ const OrganizationsPage = ({
                           return users
                             .filter((user: User) => membership.uid === user.uid)
                             .map((user: User) => {
-                              return user.firstName + " " + user.lastName;
+                              if(membership.title === "exec"){
+                                return user.firstName + " " + user.lastName;
+                              }
                             });
                         })}
                     </Card.Text>
                     <ButtonGroup aria-label="Basic example">
-                      <Button variant="secondary">Request to join </Button>
+                      <Button variant="secondary" onClick={() => joinOrg(post.id, post.name)}>Join</Button>
                     </ButtonGroup>
                   </Card.Body>
                 </Card>
