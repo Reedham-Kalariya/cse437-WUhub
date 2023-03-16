@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from "react";
 import * as ReactDOM from "react-dom";
 import { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 import { init_firebase_storage } from "../firebase/firebase-config";
 import {
@@ -33,6 +33,14 @@ const firestore = init_firebase_storage();
 
 let currentUser = auth.currentUser;
 let currentUserUID = currentUser?.uid;
+  // Session Management
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = auth.currentUser;
+      currentUserUID = currentUser?.uid;
+    } 
+  });
+
 
 // Expected database schema
 interface Event {
@@ -264,10 +272,12 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
 
   // Get organizations for which the user is an exec
   const getOrgsOfUser = async (uid: string | undefined) => {
-    let orgs = new Map<string, string>();
+    console.log(uid);
+    const orgs = new Map<string, string>();
     const q = query(
       collection(firestore, "memberships"),
-      where("uid", "==", uid)
+      where("uid", "==", uid),
+      where("title", "==", "exec")
     );
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((doc) => {
