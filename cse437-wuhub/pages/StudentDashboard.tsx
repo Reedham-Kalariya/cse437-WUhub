@@ -135,12 +135,12 @@ const StudentDashboard = ({ posts, events }: Props): JSX.Element => {
 
   const organizationsClick = () => {
     console.log("organization click");
-    router.push("/OrganizationsPage"); //check for the page name
+    router.push("/organizations"); //check for the page name
   };
 
   const eventsClick = () => {
     console.log("events click");
-    router.push("/EventsPage"); //check for the page name
+    router.push("/events"); //check for the page name
   };
 
   const execClick = () => {
