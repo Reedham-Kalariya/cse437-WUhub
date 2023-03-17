@@ -26,6 +26,7 @@ import {
   DocumentReference,
   updateDoc,
 } from "firebase/firestore";
+import { useState } from "react";
 
 interface User {
   uid: string;
@@ -67,11 +68,13 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
   const firebase = init_firebase(); // initialize the Firebase app
   const auth = getAuth(); // get the authentication object
 
-  let currentUser = auth.currentUser;
+  //let currentUser = auth.currentUser;
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
   // Session Management
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      currentUser = auth.currentUser;
+      //currentUser = auth.currentUser;
+      setCurrentUser(auth.currentUser);
     } 
   });
 

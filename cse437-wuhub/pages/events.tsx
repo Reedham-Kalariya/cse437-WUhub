@@ -62,7 +62,7 @@ interface RSVP {
 
 interface Props {
   posts: Event[];
-  rsvps: RSVP[];
+  initrsvps: RSVP[];
 }
 
 // Load existing events
@@ -101,12 +101,12 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
   });
 
   return {
-    props: { posts: postData, rsvps: postDataRSVP },
+    props: { posts: postData, initrsvps: postDataRSVP },
   };
 };
 
 // EventPage Object
-const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
+const EventsPage = ({ posts, initrsvps }: Props): JSX.Element => {
   // Back click
   const router = useRouter();
 
@@ -133,6 +133,8 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
 
   // Define a state variable to hold the orgs
   const [orgs, setOrgs] = useState(new Map());
+
+  const [rsvps, setRsvps] = useState(initrsvps);
 
   // Use useEffect to fetch the orgs when the component mounts
   useEffect(() => {
@@ -290,10 +292,7 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
     const rsvpCollection = collection(firestore, "rsvp");
     console.log(userid);
     let i = 0;
-    rsvps
-      .filter((rsvp: RSVP) => rsvp.eid === eventid)
-      .filter((rsvp: RSVP) => rsvp.uid === userid)
-      .map((rsvp: RSVP) => {
+    rsvps.filter((rsvp: RSVP) => rsvp.eid === eventid).filter((rsvp: RSVP) => rsvp.uid === userid).map((rsvp: RSVP) => {
         i = i + 1;
         return;
       });
@@ -301,14 +300,14 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
       "number of rsvps with same uid: " + i + " and userid: " + userid
     );
 
-    //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
     if (i === 0) {
       if (typeof userid !== "undefined") {
-        const membershipCollection = collection(firestore, "rsvp");
-        await addDoc(membershipCollection, {
+        const r:RSVP = {
           uid: userid,
           eid: eventid,
-        });
+        };
+        await addDoc(rsvpCollection, r);
+        setRsvps([...rsvps, r]);
         alert("You have successfully RSVPed");
       } else {
         alert("Please sign in to RSVP");

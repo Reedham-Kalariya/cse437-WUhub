@@ -58,7 +58,7 @@ interface User {
 
 interface Props {
   posts: Organization[];
-  memberships: Membership[];
+  initMemberships: Membership[];
   users: User[];
 }
 
@@ -106,13 +106,13 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
   });
 
   return {
-    props: { posts: postData, memberships: membershipsData, users: usersData },
+    props: { posts: postData, initMemberships: membershipsData, users: usersData },
   };
 };
 
 const OrganizationsPage = ({
   posts,
-  memberships,
+  initMemberships,
   users,
 }: Props): JSX.Element => {
   const router = useRouter();
@@ -120,6 +120,7 @@ const OrganizationsPage = ({
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgDesc, setNewOrgDesc] = useState("");
   const [newOrgOID, setNewOrgOID] = useState("");
+  const [memberships, setMemberships] = useState(initMemberships);
 
   const backClick = () => {
     router.push("/StudentDashboard");
@@ -164,17 +165,19 @@ const OrganizationsPage = ({
       return;
     });
     console.log("number of members with same uid: " + i + " and userid: " + userid);
-    
+
     //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
 
     if(i === 0){
       if(typeof(userid) !== "undefined"){
-        await addDoc(membershipCollection, {
+        const m:Membership = {
           uid: userid,
           title: "member",
           oid: oid,
           orgName: name
-        });
+        };
+        await addDoc(membershipCollection, m);
+        setMemberships([...memberships, m]);
         alert("You have successfully joined " + name);
       } 
     }
