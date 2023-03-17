@@ -124,7 +124,6 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
               );
             })} </p>
             <p> Email: {currentUser?.email} </p>
-            <p> Phone Number: {currentUser?.phoneNumber} </p>
             <p> Unique UID: {currentUser?.uid} </p>
             <br></br>
             <Button onClick={updateClick} className="btn">

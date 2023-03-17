@@ -18,6 +18,18 @@
     margin-bottom: 5px;
 }
 
+.orgs {
+    border-radius: 50px;
+    padding: 50px;
+    border: 5px solid #e9ecef;
+}
+
+.events {
+    border-radius: 50px;
+    padding: 50px;
+    border: 5px solid #e9ecef;
+}
+
 .org {
     margin-bottom: 5px;
 }

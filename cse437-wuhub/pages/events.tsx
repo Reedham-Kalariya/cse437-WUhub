@@ -26,6 +26,7 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Form from "react-bootstrap/Form";
 import Card from "react-bootstrap/Card";
 import styles from "../styles/EventsPage.module.css";
+import { it } from "node:test";
 
 const firebase = init_firebase(); // initialize the Firebase app
 const auth = getAuth(); // get the authentication object
@@ -33,14 +34,13 @@ const firestore = init_firebase_storage();
 
 let currentUser = auth.currentUser;
 let currentUserUID = currentUser?.uid;
-  // Session Management
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      currentUser = auth.currentUser;
-      currentUserUID = currentUser?.uid;
-    } 
-  });
-
+// Session Management
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = auth.currentUser;
+    currentUserUID = currentUser?.uid;
+  }
+});
 
 // Expected database schema
 interface Event {
@@ -55,7 +55,7 @@ interface Event {
   associatedOrgID: string;
 }
 
-interface RSVP{
+interface RSVP {
   uid: string;
   eid: string;
 }
@@ -96,7 +96,7 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
 
     postDataRSVP.push({
       uid: data.uid,
-      eid: data.eid
+      eid: data.eid,
     } as RSVP);
   });
 
@@ -218,7 +218,7 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
     const hostsCollection = collection(firestore, "hosts");
     const docRef2 = await addDoc(hostsCollection, {
       oid: newEventAssociatedOrgID,
-      eid: docRef.id
+      eid: docRef.id,
     });
 
     // Throw at local
@@ -272,7 +272,6 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
 
   // Get organizations for which the user is an exec
   const getOrgsOfUser = async (uid: string | undefined) => {
-    console.log(uid);
     const orgs = new Map<string, string>();
     const q = query(
       collection(firestore, "memberships"),
@@ -283,39 +282,53 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
     querySnapshot.forEach((doc) => {
       orgs.set(doc.data().orgName, doc.data().oid);
     });
-    console.log(orgs);
     return orgs;
   };
 
-  async function rsvp(eventid: string){
+  async function rsvp(eventid: string) {
     const userid = currentUser?.uid;
     const rsvpCollection = collection(firestore, "rsvp");
     console.log(userid);
     let i = 0;
-    rsvps.filter((rsvp: RSVP) => rsvp.eid === eventid).filter((rsvp: RSVP) => rsvp.uid === userid).map((rsvp: RSVP) => {
-      i = i + 1;
-      return;
-    });
-    console.log("number of rsvps with same uid: " + i + " and userid: " + userid);
-    
+    rsvps
+      .filter((rsvp: RSVP) => rsvp.eid === eventid)
+      .filter((rsvp: RSVP) => rsvp.uid === userid)
+      .map((rsvp: RSVP) => {
+        i = i + 1;
+        return;
+      });
+    console.log(
+      "number of rsvps with same uid: " + i + " and userid: " + userid
+    );
+
     //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
-    if(i === 0){
-      if(typeof(userid) !== "undefined"){
+    if (i === 0) {
+      if (typeof userid !== "undefined") {
         const membershipCollection = collection(firestore, "rsvp");
         await addDoc(membershipCollection, {
           uid: userid,
-          eid: eventid
+          eid: eventid,
         });
         alert("You have successfully RSVPed");
-      }
-      else{
+      } else {
         alert("Please sign in to RSVP");
       }
-    }
-    else{
+    } else {
       alert("You have already RSVPed to this event");
     }
+  }
 
+  function checkOrgsValuesForSpecificID(oid: string): boolean {
+    const iterator_object = orgs.values();
+    let nextValue = iterator_object.next();
+    
+    while (!nextValue.done) {
+       if (nextValue.value == oid) {
+         return true;
+       }
+        nextValue = iterator_object.next();
+     }
+    return false;
   }
 
   return (
@@ -361,21 +374,27 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
                     >
                       View
                     </Button>
-                    <Button variant="secondary" onClick={() => rsvp(post.id)}>RSVP</Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => handleEditMode(post)}
-                    >
-                      Edit
+                    <Button variant="secondary" onClick={() => rsvp(post.id)}>
+                      RSVP
                     </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      onClick={() => handleDeleteEvent(post.id)}
-                    >
-                      Delete
-                    </Button>
+                    {checkOrgsValuesForSpecificID(post.associatedOrgID) && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => handleEditMode(post)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          onClick={() => handleDeleteEvent(post.id)}
+                        >
+                          Delete
+                        </Button>{" "}
+                      </>
+                    )}
                   </ButtonGroup>
                 </Card.Body>
               </Card>
@@ -424,7 +443,7 @@ const EventsPage = ({ posts, rsvps }: Props): JSX.Element => {
               <Form.Select
                 onChange={(e) => {
                   setNewEventAssociatedOrgName(e.target.value);
-                  setNewEventAssociatedOrgID(orgs.get(e.target.value))
+                  setNewEventAssociatedOrgID(orgs.get(e.target.value));
                 }}
               >
                 <option> Select One </option>
