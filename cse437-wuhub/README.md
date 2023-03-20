@@ -10,6 +10,42 @@ Navigate to [localhost:3000](http://localhost:3000/) in any web browser.
 npm run dev
 ```
 
+## Client-Side Rendering
+```
+// Import statements
+
+// OPTIONAL: getServerSideProps() handles getting a specific "id" from the url, passing it to the Page.
+
+const Page = () => {
+  
+  // Session Management
+  
+  // Declare Variables
+  const [posts, setPosts] = useState();
+  
+  // Call(s) to API
+    // e.g. get events with a pointer, get events without a point, get organizations the user is apart of
+    // useEffect hooks should update on "user" state change
+  
+  // Handle Functions
+  
+  return (
+    <>
+      // Import header component and pass authentication
+      <Header user={user} back={null} />
+    
+      {posts?.forEach((post) => {
+          <p>{post.name}</p>
+        }
+      }
+    </>
+  )
+  
+}
+
+export default Page;
+```
+
 ## Graph Database Schema
 ### Nodes
 - events
