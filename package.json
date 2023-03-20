@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "@types/express-serve-static-core": "^4.17.33"
+  },
+  "dependencies": {
+    "firebase": "^8.10.1",
+    "firestore": "^1.1.6",
+    "next-auth": "^4.20.1",
+    "nookies": "^2.5.2",
+    "react-bootstrap": "^2.7.2"
+  }
+}

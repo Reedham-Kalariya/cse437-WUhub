@@ -2,10 +2,12 @@ import React, { useState, useEffect, ReactElement } from "react";
 import { GetStaticProps, NextPage } from "next";
 import { initializeApp } from "firebase/app";
 import { useRouter } from "next/router";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 import { init_firebase_storage } from "../firebase/firebase-config";
 import { useDocument, useCollection } from "react-firebase-hooks/firestore";
+import { Header } from "@/components/header"
+import axios from "axios";
 import {
   getFirestore,
   collection,
@@ -26,185 +28,122 @@ import styles from "../styles/OrganizationsPage.module.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ButtonGroup, Card, Form } from "react-bootstrap";
 
-const firebase = init_firebase(); // initialize the Firebase app
-const auth = getAuth(); // get the authentication object
+import { Organization, Membership, User } from "@/types"
+
 const firestore = init_firebase_storage();
 
-let currentUser = auth.currentUser;
+// export const getStaticProps: GetStaticProps<Props> = async () => {
 
-// Expected database schema
-interface Organization {
-  id: string;
-  name: string;
-  desc: string;
-  route: string;
-}
+//   const postsCollection = await collection(firestore, "organizations");
+//   const postsQuerySnapshot = await getDocs(postsCollection);
 
-// Expected database schema
-interface Membership {
-  oid: string;
-  uid: string;
-  title: string;
-  orgName: string;
-}
+//   const postData: Organization[] = [];
+//   postsQuerySnapshot.forEach((doc) => {
+//     const data = doc.data();
 
-// Expected database schema
-interface User {
-  uid: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
+//     postData.push({
+//       id: doc.id,
+//       name: data.name,
+//       desc: data.desc,
+//     } as Organization);
+//   });
 
-interface Props {
-  posts: Organization[];
-  initMemberships: Membership[];
-  users: User[];
-}
+//   const membershipCollection = await collection(firestore, "memberships");
+//   const membershipQuerySnapshot = await getDocs(membershipCollection);
 
-export const getStaticProps: GetStaticProps<Props> = async () => {
-  const postsCollection = await collection(firestore, "organizations");
-  const postsQuerySnapshot = await getDocs(postsCollection);
+//   const membershipsData: Membership[] = [];
+//   membershipQuerySnapshot.forEach((doc) => {
+//     const data = doc.data();
+//     membershipsData.push({
+//       oid: data.oid,
+//       uid: data.uid,
+//       title: data.title,
+//       orgName: data.orgName,
+//     } as Membership);
+//   });
 
-  const postData: Organization[] = [];
-  postsQuerySnapshot.forEach((doc) => {
-    const data = doc.data();
+//   const userCollection = await collection(firestore, "users");
+//   const userQuerySnapshot = await getDocs(userCollection);
 
-    postData.push({
-      id: doc.id,
-      name: data.name,
-      desc: data.desc,
-    } as Organization);
-  });
+//   const usersData: User[] = [];
+//   userQuerySnapshot.forEach((doc) => {
+//     const data = doc.data();
+//     usersData.push({
+//       uid: data.uid,
+//       firstName: data.firstName,
+//       lastName: data.lastName,
+//       email: data.email,
+//     } as User);
+//   });
 
-  const membershipCollection = await collection(firestore, "memberships");
-  const membershipQuerySnapshot = await getDocs(membershipCollection);
+//   return {
+//     props: { posts: postData, initMemberships: membershipsData, users: usersData },
+//   };
+// };
 
-  const membershipsData: Membership[] = [];
-  membershipQuerySnapshot.forEach((doc) => {
-    const data = doc.data();
-    membershipsData.push({
-      oid: data.oid,
-      uid: data.uid,
-      title: data.title,
-      orgName: data.orgName,
-    } as Membership);
-  });
+const OrganizationsPage = (): JSX.Element => {
 
-  const userCollection = await collection(firestore, "users");
-  const userQuerySnapshot = await getDocs(userCollection);
+  // Session Management
+  //
+  const firebase = init_firebase();
+  const auth = getAuth();
+  const [user, setUser] = useState(auth.currentUser);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(auth.currentUser);
+      }
+    });
+    return () => {
+      unsubscribe();
+    }
+  }, [auth]);
 
-  const usersData: User[] = [];
-  userQuerySnapshot.forEach((doc) => {
-    const data = doc.data();
-    usersData.push({
-      uid: data.uid,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-    } as User);
-  });
 
-  return {
-    props: { posts: postData, initMemberships: membershipsData, users: usersData },
-  };
-};
+  // Get Organizations
+  //
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  useEffect(() => {
+    axios.get('/api/organizations/').then((res) => {
+      setOrganizations(res.data);
+    }).catch((err) => {
+      console.error(err);
+    });
+  }, []);
 
-const OrganizationsPage = ({
-  posts,
-  initMemberships,
-  users,
-}: Props): JSX.Element => {
   const router = useRouter();
   const [deletedPostId, setDeletedPostId] = useState<string | null>(null);
-  const [newOrgName, setNewOrgName] = useState("");
-  const [newOrgDesc, setNewOrgDesc] = useState("");
-  const [newOrgOID, setNewOrgOID] = useState("");
-  const [memberships, setMemberships] = useState(initMemberships);
 
   const backClick = () => {
-    router.push("/StudentDashboard");
+    router.push("/dashboard");
   };
 
-  const handleAddOrg = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const orgCollection = collection(firestore, "organizations");
-    const docRef = await addDoc(orgCollection, {
-      name: newOrgName,
-      desc: newOrgDesc,
-      route: null,
-    });
-    const userid = currentUser?.uid;
-    console.log(userid);
-    if(typeof(userid) !== "undefined"){
-      const membershipCollection = collection(firestore, "memberships");
-      console.log(docRef.id);
-      await addDoc(membershipCollection, {
-        uid: currentUser?.uid,
-        title: "exec",
-        oid: docRef.id,
-        orgName: newOrgName
-      });
-    }
-    else{
-      alert("Please sign in to make an organization");
-    }
-    
-
-    setNewOrgName("");
-    setNewOrgDesc("");
-    router.push("/organizations");
+  const handleViewOrg = (oid: string) => {
+    router.push('/organization/' + oid)
   };
 
-  async function joinOrg(oid: string, name: string){
-    const membershipCollection = collection(firestore, "memberships");
-    const userid = currentUser?.uid;
-    let i = 0;
-    memberships.filter((membership: Membership) => membership.oid === oid).filter((membership: Membership) => membership.uid === userid).map((membership: Membership) => {
-      i = i + 1;
-      return;
+  const handleJoinOrg = (oid: string) => {
+    axios.post("http://localhost:3000/api/organizations/join", {
+      uid: user.uid,
+      oid: oid,
+      role: "member"
     });
-    console.log("number of members with same uid: " + i + " and userid: " + userid);
+    router.push('/organizations');
+  };
 
-    //TODO: We need some way to refresh the page so that the membership table updates every time a new member joins!!!!!!!!!!!!!!!!!!!!
-
-    if(i === 0){
-      if(typeof(userid) !== "undefined"){
-        const m:Membership = {
-          uid: userid,
-          title: "member",
-          oid: oid,
-          orgName: name
-        };
-        await addDoc(membershipCollection, m);
-        setMemberships([...memberships, m]);
-        alert("You have successfully joined " + name);
-      } 
-    }
-    else{
-      alert("You are already part of this organization");
-    }
-  }
+  const handleCreate = () => {
+    router.push('/organization/create');
+  };
 
   const handleDeleteOrg = async (postId: string) => {
     await deleteDoc(doc(firestore, "organizations", postId));
     setDeletedPostId(postId);
   };
 
-  if (!posts) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button">{currentUser?.email}</div>
-        </div>
-      </div>
+      <Header user={user} back={"/dashboard"} />
+
       <Button
         variant="secondary"
         onClick={backClick}
@@ -213,35 +152,23 @@ const OrganizationsPage = ({
         <strong>&lt;</strong> Back to Home
       </Button>
       <div className={styles.mainContent}>
+
         <div className={styles.currentOrgsBox}>
-          {posts.map((post) => {
+
+          {organizations.map((post) => {
             return (
               <>
                 <Card
-                  key={post.id}
+                  key={post.oid}
                   className={styles.org}
                   style={{ width: "18rem" }}
                 >
                   <Card.Body>
                     <Card.Title>{post.name}</Card.Title>
-                    <Card.Text>{post.desc}</Card.Text>
-                    <Card.Text>
-                      {memberships
-                        .filter(
-                          (membership: Membership) => post.id === membership.oid
-                        )
-                        .map((membership: Membership) => {
-                          return users
-                            .filter((user: User) => membership.uid === user.uid)
-                            .map((user: User) => {
-                              if(membership.title === "exec"){
-                                return user.firstName + " " + user.lastName;
-                              }
-                            });
-                        })}
-                    </Card.Text>
+                    <Card.Text>{post.description}</Card.Text>
                     <ButtonGroup aria-label="Basic example">
-                      <Button variant="secondary" onClick={() => joinOrg(post.id, post.name)}>Join</Button>
+                      <Button variant="primary" onClick={() => handleViewOrg(post.oid)}>View</Button>
+                      <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>Join</Button>
                     </ButtonGroup>
                   </Card.Body>
                 </Card>
@@ -249,29 +176,13 @@ const OrganizationsPage = ({
             );
           })}
         </div>
-        <div className={styles.addOrgBox}>
-          <h1>Start a New Organization</h1>
-          <Form onSubmit={handleAddOrg}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                value={newOrgName}
-                onChange={(e) => setNewOrgName(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label> Short Description </Form.Label>
-              <Form.Control
-                value={newOrgDesc}
-                onChange={(e) => setNewOrgDesc(e.target.value)}
-              />
-            </Form.Group>
 
-            <Button variant="primary" type="submit">
-              Submit
-            </Button>
-          </Form>
-        </div>
+        <Button
+          variant="primary"
+          onClick={handleCreate}
+        >
+          Create a New Organization
+        </Button>
       </div>
     </>
   );

@@ -1,31 +1,28 @@
 import { useRouter } from "next/router";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import React, { useState, useEffect, ReactElement } from "react";
 
 import { init_firebase } from "@/firebase/firebase-config";
 
 import styles from "../styles/Home.module.css";
 import Button from "react-bootstrap/Button";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Header } from "@/components/header";
 
 import Image from "next/image";
 import laptop_mockup from "../resources/laptop-mockup.png";
 import wuhub_logo from "../resources/wuhub_logo.png";
 
-export default function Home() {
-  // initialize Firebase using the init_firebase function
-  const firebase = init_firebase();
-
-  // get an instance of the Auth object from the Firebase authentication SDK
-  const auth = getAuth();
+const Home = (): JSX.Element => {
 
   const router = useRouter();
 
   const loginClick = () => {
-    router.push("/LoginPage");
+    router.push("/login");
   };
 
   const registerClick = () => {
-    router.push("/RegisterPage");
+    router.push("/register");
   };
 
   const updateProfile = () => {
@@ -34,16 +31,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button">
-            <strong>Login for the full WU|Hub Experience!</strong>
-          </div>
-        </div>
-      </div>
+      <Header user={null} />
 
       <div className={styles.mainContent}>
         <div className={styles.mainContentLeft}>
@@ -76,3 +64,5 @@ export default function Home() {
     </>
   );
 }
+
+export default Home;

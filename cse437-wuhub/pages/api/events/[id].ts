@@ -8,7 +8,7 @@ export default async function handler(
     res: NextApiResponse
 ) {
     const id = req.query.id as string;
-    
+
     console.log(id);
     const firestore = init_firebase_storage();
 
@@ -18,6 +18,9 @@ export default async function handler(
 
     if (docSnap.exists()) {
         const data = docSnap.data();
+        data.start = data.start.toDate().toLocaleString();
+        data.end = data.end.toDate().toLocaleString();
+        
         res.status(200).json(data);
     } else {
         res.status(404).end("error");

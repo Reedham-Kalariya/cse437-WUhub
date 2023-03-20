@@ -4,7 +4,7 @@ import { initializeApp } from "firebase/app";
 import { init_firebase } from "@/firebase/firebase-config";
 import { init_firebase_storage } from "@/firebase/firebase-config";
 import { useRouter } from "next/router";
-import React from "react";
+import { useState } from "react";
 import * as ReactDOM from "react-dom";
 
 // import the Firebase authentication SDK functions
@@ -13,9 +13,7 @@ import {
   signInWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
-  setPersistence,
-  onAuthStateChanged,
-  browserSessionPersistence
+  onAuthStateChanged
 } from "firebase/auth";
 
 // import the Firebase Storage SDK functions
@@ -35,20 +33,16 @@ import brookings_seal from "../resources/brookings-seal.png";
 import wuhub_logo from "../resources/wuhub_logo.png";
 
 // define the LoginPage functional component
-export default function LoginPage() {
-  // initialize Firebase using the init_firebase function
+export default function Login() {
+
+  // Authentication & Session Management
   const firebase = init_firebase();
-
-  //initialize Firebase storage
-  const storage = init_firebase_storage();
-
-  // get an instance of the Auth object from the Firebase authentication SDK
   const auth = getAuth();
 
   const router = useRouter();
 
   // define the login function that gets called when the user clicks the "Login" button
-  function login() {
+  function handle_login() {
     console.log("login initiated");
     // get the user's email and password from the input fields
     let email = (document.getElementById("login-email")! as HTMLInputElement)
@@ -67,7 +61,7 @@ export default function LoginPage() {
           // firebase.post('./sessionLogin', (req, res) => {
 
           // })
-          router.push("/StudentDashboard");
+          router.push("/dashboard");
         }
       })
       .catch((err) => {
@@ -154,14 +148,8 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button">Login for the full WU|Hub Experience!</div>
-        </div>
-      </div>
+      {/* <Header auth={auth} /> */}
+
       <Button
         variant="secondary"
         onClick={backClick}
@@ -199,7 +187,7 @@ export default function LoginPage() {
                 id="login-password"
               />
             </Form.Group>
-            <Button variant="success" onClick={() => login()}>
+            <Button variant="success" onClick={() => handle_login()}>
               Submit
             </Button>
           </Form>
