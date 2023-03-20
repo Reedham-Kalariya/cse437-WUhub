@@ -84,7 +84,7 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
 
   const backClick = () => {
     console.log("profile click");
-    router.push("/StudentDashboard");
+    router.push("/dashboard");
   };
 
   const updateClick = () => {
