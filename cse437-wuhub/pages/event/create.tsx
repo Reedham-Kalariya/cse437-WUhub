@@ -62,10 +62,18 @@ const CreateEvent = (): JSX.Element => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("http://localhost:3000/api/organizations/graph/", {
-        to: "_memberships",
-        field: "uid",
-        value: user?.uid,
+      axios.post("/api/organizations/graph/", {
+        "to": "_memberships",
+        "conditions": [
+          {
+            "field": "uid",
+            "value": user?.uid
+          },
+          {
+            "field": "role",
+            "value": "exec"
+          }
+        ]
       }).then((res) => {
         setOrganizations(res.data);
       }).catch((err) => {
