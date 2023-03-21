@@ -218,7 +218,7 @@ const StudentDashboard = (): JSX.Element => {
                       <Card.Text>{post.description}</Card.Text>
                       <ButtonGroup aria-label="Basic example">
                         <Button variant="secondary" onClick={() => handleViewOrganization(post.oid)}>View</Button>
-                        <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>View</Button>
+                        <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>Join</Button>
                       </ButtonGroup>
                     </Card.Body>
                   </Card>
