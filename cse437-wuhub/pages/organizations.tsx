@@ -122,22 +122,8 @@ const OrganizationsPage = (): JSX.Element => {
     router.push('/organization/' + oid)
   };
 
-  const handleJoinOrg = (oid: string) => {
-    axios.post("http://localhost:3000/api/organizations/join", {
-      uid: user.uid,
-      oid: oid,
-      role: "member"
-    });
-    router.push('/organizations');
-  };
-
   const handleCreate = () => {
     router.push('/organization/create');
-  };
-
-  const handleDeleteOrg = async (postId: string) => {
-    await deleteDoc(doc(firestore, "organizations", postId));
-    setDeletedPostId(postId);
   };
 
   return (
@@ -168,7 +154,6 @@ const OrganizationsPage = (): JSX.Element => {
                     <Card.Text>{post.description}</Card.Text>
                     <ButtonGroup aria-label="Basic example">
                       <Button variant="primary" onClick={() => handleViewOrg(post.oid)}>View</Button>
-                      <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>Join</Button>
                     </ButtonGroup>
                   </Card.Body>
                 </Card>

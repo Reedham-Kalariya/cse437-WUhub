@@ -18,7 +18,6 @@ import styles from "../styles/dashboard.module.css";
 import event_styles from "@/styles/EventsPage.module.css";
 
 
-
 // StudentDashboard
 const StudentDashboard = (): JSX.Element => {
 
@@ -42,48 +41,74 @@ const StudentDashboard = (): JSX.Element => {
   // Get events
   const [events, setEvents] = useState<Event[]>([]);
   useEffect(() => {
-    axios.post("http://localhost:3000/api/events", {
-      quantity: "3"
-    }).then((res) => {
-      setEvents(res.data);
-    }).catch((err) => {
-      console.error(err);
-    });
-  }, []);
+    if (user) {
+      axios.get("/api/events", {
+        "params": {
+          "quantity": "3"
+        }
+      }).then((res) => {
+        setEvents(res.data);
+      }).catch((err) => {
+        console.error(err);
+      });
+    }
+  }, [user]);
+
 
   // Get organization where the user is exec
   const [execOrgs, setExecOrgs] = useState<Organization[]>([]);
   const [hasExecOrgs, setHasExecOrgs] = useState(false);
   useEffect(() => {
-    axios.post("http://localhost:3000/api/organizations/graph/", {
-      "to": "_memberships",
-      "field": "uid",
-      "value": user?.uid,
-      "type": "role",
-      "type_value": "exec"
-    }).then((res) => {
-      setExecOrgs(res.data);
-      if (res.data.length > 0) {
-        setHasExecOrgs(true);
-      }
-    }).catch((err) => {
-      console.error(err);
-    });
+    if (user) {
+      axios.post("/api/organizations/graph/", {
+        "to": "_memberships",
+        "conditions": [
+          {
+            "field": "uid",
+            "value": user?.uid
+          },
+          {
+            "field": "role",
+            "value": "exec"
+          }
+        ]
+      }).then((res) => {
+        setExecOrgs(res.data);
+        if (res.data.length > 0) {
+          setHasExecOrgs(true);
+        }
+      }).catch((err) => {
+        console.error(err);
+      });
+    }
   }, [user]);
+
+
 
   // Get organizations
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   useEffect(() => {
-    axios.post("http://localhost:3000/api/organizations/prompt/", {
-      "to": "_memberships",
-      "field": "uid",
-      "value": user?.uid,
-    }).then((res) => {
-      setOrganizations(res.data);
-    }).catch((err) => {
-      console.error(err);
-    });
+    if (user) {
+      axios.post("/api/organizations/prompt/", {
+        "to": "_memberships",
+        "field": "uid",
+        "value": user?.uid,
+      }).then((res) => {
+        setOrganizations(res.data);
+      }).catch((err) => {
+        console.error(err);
+      });
+    }
   }, [user]);
+
+  const handleJoinOrg = (oid: string) => {
+    axios.post("/api/organizations/join", {
+      uid: user.uid,
+      oid: oid,
+      role: "member"
+    });
+    router.push('/organizations');
+  };
 
 
   const router = useRouter();
@@ -193,6 +218,7 @@ const StudentDashboard = (): JSX.Element => {
                       <Card.Text>{post.description}</Card.Text>
                       <ButtonGroup aria-label="Basic example">
                         <Button variant="secondary" onClick={() => handleViewOrganization(post.oid)}>View</Button>
+                        <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>View</Button>
                       </ButtonGroup>
                     </Card.Body>
                   </Card>

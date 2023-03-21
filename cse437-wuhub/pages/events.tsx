@@ -57,7 +57,7 @@ const EventsPage = (): JSX.Element => {
   //
   const [events, setEvents] = useState<Event[]>([]);
   useEffect(() => {
-    axios.get("http://localhost:3000/api/events").then((res) => {
+    axios.get("/api/events").then((res) => {
       setEvents(res.data);
     }).catch((err) => {
       console.error(err);

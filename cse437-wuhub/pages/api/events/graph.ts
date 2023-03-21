@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getFirestore, doc, getDoc, collection, getDocs, where, query, documentId } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, getDocs, where, query } from "firebase/firestore";
 import { init_firebase, init_firebase_storage } from "@/firebase/firebase-config";
 import { Event } from "@/types";
 const firebase = require('firebase/app');
@@ -17,30 +17,32 @@ export default async function handler(
 ) {
     const firestore = init_firebase_storage();
 
-    const { to, field, value, type, type_value } = req.body;
+    const { to, conditions } = req.body;
 
     // Get document by ID
     try {
-        
+
         const filtered_list: string[] = [];
         let q_graph;
 
-        if (type == null || type_value == null) {
-            console.log("Single way...");
-            q_graph = query(collection(firestore, to), where(field, '==', value));
+        if (conditions.length == 1) {
+            q_graph = query(collection(firestore, to), where(conditions[0]["field"], '==', conditions[0]["value"]));
+        }
+        else if (conditions.length == 2) {
+            q_graph = query(collection(firestore, to),
+                where(conditions[0]["field"], "==", conditions[0]["value"]),
+                where(conditions[1]["field"], "==", conditions[1]["value"])
+            );
         }
         else {
-            q_graph = query(collection(firestore, to),
-                where(field, "==", value),
-                where(type, "==", type_value)
-            );
-            
+            res.status(404).end("Too many conditions were provided.");
+            return;
         }
 
         // Get filtered list
         (await getDocs(q_graph)).forEach((doc) => {
             const data = doc.data();
-            filtered_list.push(data.eid);
+            filtered_list.push(data.oid);
         });
 
         if (filtered_list.length == 0) {
@@ -53,9 +55,6 @@ export default async function handler(
         (await getDocs(q_events)).forEach((doc) => {
             const data = doc.data();
             data.eid = doc.id;
-            data.start = data.start.toDate().toLocaleString();
-            data.end = data.end.toDate().toLocaleString();
-
             result.push(data);
         });
 
@@ -63,7 +62,11 @@ export default async function handler(
 
     }
     catch (err) {
-        res.status(404).end("An error occured while fetching an graph to events.")
+        res.status(404).json({
+            "message": "An error occured while fetching an graph to organizations.",
+            "error": err,
+            "body": req.body
+        })
     }
 
 }

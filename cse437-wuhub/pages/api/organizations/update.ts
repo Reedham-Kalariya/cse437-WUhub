@@ -13,7 +13,7 @@ export default async function handler(
     try {
 
         // Update document in events
-        const q_event = doc(firestore, 'events/' + oid);
+        const q_event = doc(firestore, 'organizations/' + oid);
         await updateDoc(q_event, {
             "name": name,
             "description": description,

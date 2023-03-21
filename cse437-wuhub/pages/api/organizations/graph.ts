@@ -17,7 +17,7 @@ export default async function handler(
 ) {
     const firestore = init_firebase_storage();
 
-    const { to, field, value, type, type_value } = req.body;
+    const { to, conditions } = req.body;
 
     // Get document by ID
     try {
@@ -25,15 +25,19 @@ export default async function handler(
         const filtered_list: string[] = [];
         let q_graph;
 
-        if (type == null || type_value == null) {
-            q_graph = query(collection(firestore, to), where(field, '==', value));
+        if (conditions.length == 1) {
+            q_graph = query(collection(firestore, to), where(conditions[0]["field"], '==', conditions[0]["value"]));
         }
-        else {
+        else if (conditions.length == 2) {
             q_graph = query(collection(firestore, to),
-                where(field, "==", value),
-                where(type, "==", type_value)
+                where(conditions[0]["field"], "==", conditions[0]["value"]),
+                where(conditions[1]["field"], "==", conditions[1]["value"])
             );
             
+        }
+        else {
+            res.status(404).end("Too many conditions were provided.");
+            return;
         }
 
         // Get filtered list
@@ -62,10 +66,7 @@ export default async function handler(
         res.status(404).json({
             "message": "An error occured while fetching an graph to organizations.",
             "error": err,
-            "body": req.body,
-            "to": to,
-            "field": field,
-            "value": value
+            "body": req.body
         })
     }
 
