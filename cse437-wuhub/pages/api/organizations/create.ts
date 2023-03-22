@@ -30,7 +30,7 @@ export default async function handler(
 
         // _ASSOCIATIONS: Create new edge for each added tag
         const q_asso = await collection(firestore, "_tag_associations");
-        tags.forEach((tag) => {
+        tags.forEach((tag: any) => {
             addDoc(q_asso, {
                 "tid": tag.id,
                 "eid": oid,

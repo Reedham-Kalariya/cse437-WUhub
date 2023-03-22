@@ -23,15 +23,20 @@ const firestore = init_firebase_storage();
 import { Event } from "@/types"
 
 
-export const getServerSideProps: GetServerSideProps = async (
-    context: GetServerSidePropsContext<{ id: string }>
-) => {
-    const id = context.query.id as string;
-    return { props: { id: id } };
-};
+// export const getServerSideProps: GetServerSideProps = async (
+//     context: GetServerSidePropsContext<{ id: string }>
+// ) => {
+//     const id = context.query.id as string;
+//     return { props: { id: id } };
+// };
+
+
 
 // EventPage Object
-const SingleEventPage = ({ id }): JSX.Element => {
+const SingleEventPage = ({}): JSX.Element => {
+
+    const router = useRouter();
+    let id = router.query.id;
 
     // Session Management
     const firebase = init_firebase();
@@ -48,7 +53,7 @@ const SingleEventPage = ({ id }): JSX.Element => {
         }
     }, [auth]);
 
-    const router = useRouter();
+    
 
     // Get event
     const [event, setEvent] = useState<Event>();

@@ -34,7 +34,7 @@ import { Organization, Event } from "@/types"
 
 let currentUser = auth.currentUser;
 
-export const getServerSideProps: GetServerSideProps = async (
+const getServerSideProps: GetServerSideProps = async (
     context: GetServerSidePropsContext<{ id: string }>
 ) => {
     const id = context.query.id as string;

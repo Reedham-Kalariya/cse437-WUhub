@@ -23,10 +23,9 @@ export default function handler(
 
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
-    let quantity = req.query.quantity;
-
-    if (quantity == null) {
-        quantity = "100"
+    let quantity = 100;
+    if (req.query.quantity != undefined) {
+        quantity = parseInt(req.query.quantity as string)
     }
 
     // Get document by ID
@@ -34,7 +33,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         const postsCollection = await query(collection(firestore, "events"), limit(quantity));
         const postsQuerySnapshot = await getDocs(postsCollection);
 
-        const postData = [];
+        const postData : any= [];
         postsQuerySnapshot.forEach((doc) => {
             const data = doc.data();
             data.eid = doc.id;
@@ -103,7 +102,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
         // _ASSOCIATIONS: Create new edge for each added tag
         const q_asso = await collection(firestore, "_tag_associations");
-        tags.forEach((tag) => {
+        tags.forEach((tag : any) => {
             addDoc(q_asso, {
                 "tid": tag.id,
                 "eid": eid,

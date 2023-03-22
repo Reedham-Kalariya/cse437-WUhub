@@ -13,7 +13,7 @@ import Image from "next/image";
 import wuhub_logo from "@/resources/wuhub_logo.png";
 
 
-export const Header = ({ user, back }) => {
+export const Header = (user: any, back: string) => {
 
     const router = useRouter();
 

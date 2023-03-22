@@ -123,7 +123,7 @@ const CreateEvent = (): JSX.Element => {
       end: newEventEnd,
       oid: newEventOID,
       tags: newEventTags,
-      uid: user.uid
+      uid: user?.uid
     });
 
     router.push("/events");
@@ -263,7 +263,7 @@ const CreateEvent = (): JSX.Element => {
               label="When?"
               value={dayjs(newEventStart)}
               onChange={(e) => {
-                const newStart = e.toDate();
+                const newStart = e?.toDate();
                 const newEnd = new Date(newStart.getTime() + 60 * 60 * 1000); // add 1 hour
                 setNewEventEnd(dayjs(newEnd).format('M/D/YYYY, h:mm:ss A'));
                 setNewEventStart(e.format('M/D/YYYY, h:mm:ss A'));
@@ -275,7 +275,7 @@ const CreateEvent = (): JSX.Element => {
             <DateTimePicker
               label="End At..."
               value={dayjs(newEventEnd)}
-              onChange={(e) => { setNewEventEnd(e.format('M/D/YYYY, h:mm:ss A')) }}
+              onChange={(e) => { setNewEventEnd(e?.format('M/D/YYYY, h:mm:ss A') as string) }}
             />
             <br /><br />
 

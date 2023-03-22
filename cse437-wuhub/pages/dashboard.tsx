@@ -103,7 +103,7 @@ const StudentDashboard = (): JSX.Element => {
 
   const handleJoinOrg = (oid: string) => {
     axios.post("/api/organizations/join", {
-      uid: user.uid,
+      uid: user?.uid,
       oid: oid,
       role: "member"
     });
