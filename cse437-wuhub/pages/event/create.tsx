@@ -263,10 +263,13 @@ const CreateEvent = (): JSX.Element => {
               label="When?"
               value={dayjs(newEventStart)}
               onChange={(e) => {
+                if (e == undefined) {
+                  return
+                }
                 const newStart = e?.toDate();
-                const newEnd = new Date(newStart.getTime() + 60 * 60 * 1000); // add 1 hour
+                const newEnd = new Date(newStart?.getTime() + 60 * 60 * 1000); // add 1 hour
                 setNewEventEnd(dayjs(newEnd).format('M/D/YYYY, h:mm:ss A'));
-                setNewEventStart(e.format('M/D/YYYY, h:mm:ss A'));
+                setNewEventStart(e?.format('M/D/YYYY, h:mm:ss A'));
               }}
             />
             <br /><br />

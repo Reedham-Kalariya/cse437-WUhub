@@ -34,16 +34,12 @@ import { Organization, Event } from "@/types"
 
 let currentUser = auth.currentUser;
 
-const getServerSideProps: GetServerSideProps = async (
-    context: GetServerSidePropsContext<{ id: string }>
-) => {
-    const id = context.query.id as string;
-    return { props: { id: id } };
-};
-
 
 // EventPage Object
-const SingleOrgsPage = ({ id }): JSX.Element => {
+const SingleOrgsPage = (): JSX.Element => {
+
+    const router = useRouter();
+    let id = router.query.id;
 
     // Session Management
     const firebase = init_firebase();
@@ -59,8 +55,6 @@ const SingleOrgsPage = ({ id }): JSX.Element => {
             unsubscribe();
         }
     }, [auth]);
-
-    const router = useRouter();
 
     // Get organization
     const [org, setOrg] = useState<Organization>();

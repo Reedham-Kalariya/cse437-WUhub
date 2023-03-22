@@ -65,7 +65,7 @@ const CreateOrganization = (): JSX.Element => {
       name: newOrgName,
       description: newOrgDescription,
       tags: newOrgTags,
-      uid: user.uid
+      uid: user?.uid
     });
 
     router.push("/organizations");
@@ -100,8 +100,8 @@ const CreateOrganization = (): JSX.Element => {
             <Form.Label>Organization Tags</Form.Label>
             <Multiselect
               options={tags} // Options to display in the dropdown
-              onSelect={(e) => setNewOrgTags(e)} // Function will trigger on select event
-              onRemove={(e) => setNewOrgTags(e)} // Function will trigger on remove event
+              onSelect={(e: any) => setNewOrgTags(e)} // Function will trigger on select event
+              onRemove={(e: any) => setNewOrgTags(e)} // Function will trigger on remove event
               displayValue="name" // Property name to display in the dropdown options
             />
 

@@ -18,22 +18,16 @@ import { Organization, Membership, User, Tag } from "@/types"
 
 const firestore = init_firebase_storage();
 
-export const getServerSideProps: GetServerSideProps = async (
-    context: GetServerSidePropsContext<{ id: string }>
-  ) => {
-    const id = context.query.id as string;
-    return { props: { id: id } };
-  };
 
 
+const EditOrganization = (): JSX.Element => {
 
-const EditOrganization = ({ id }): JSX.Element => {
+  const router = useRouter();
+  let id = router.query.id;
 
   // Session Management
   const firebase = init_firebase();
   const auth = getAuth();
-
-  const router = useRouter();
   
   const [user, setUser] = useState(auth.currentUser);
   useEffect(() => {

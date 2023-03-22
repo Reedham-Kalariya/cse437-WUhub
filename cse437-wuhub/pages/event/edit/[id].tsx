@@ -5,12 +5,16 @@ import { useRouter } from "next/router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 import axios from "axios";
-import { Header } from "@/components/header"
+import { Header } from "@/components/header";
 import { init_firebase_storage } from "@/firebase/firebase-config";
 import Image from "next/image";
 import wuhub_logo from "../resources/wuhub_logo.png";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { GetStaticPaths, GetServerSideProps, GetServerSidePropsContext } from "next";
+import {
+  GetStaticPaths,
+  GetServerSideProps,
+  GetServerSidePropsContext,
+} from "next";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Form from "react-bootstrap/Form";
@@ -18,22 +22,16 @@ import Card from "react-bootstrap/Card";
 import styles from "@/styles/EventsPage.module.css";
 import { it } from "node:test";
 import { Event, RSVP, Organization, Tag } from "@/types";
-import Multiselect from 'multiselect-react-dropdown';
+import Multiselect from "multiselect-react-dropdown";
 
-import { DateTimePicker } from '@mui/x-date-pickers';
-import dayjs from 'dayjs';
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 const firestore = init_firebase_storage();
 
-export const getServerSideProps: GetServerSideProps = async (
-  context: GetServerSidePropsContext<{ id: string }>
-) => {
-  const id = context.query.id as string;
-  return { props: { id: id } };
-};
-
-
-const EditEventPage = ({ id }): JSX.Element => {
+const EditEventPage = (): JSX.Element => {
+  const router = useRouter();
+  let id = router.query.id;
 
   // Session Management
   const firebase = init_firebase();
@@ -48,11 +46,8 @@ const EditEventPage = ({ id }): JSX.Element => {
     });
     return () => {
       unsubscribe();
-    }
+    };
   }, [auth]);
-
-  const router = useRouter();
-
 
   // Initiate State Variables
   const [editEventID, setEditEventID] = useState("placeholder_for_database");
@@ -60,28 +55,30 @@ const EditEventPage = ({ id }): JSX.Element => {
   const [editEventLocation, setEditEventLocation] = useState("");
   const [editEventPrivate, setEditEventPrivate] = useState(false);
   const [editEventDescription, setEditEventDescription] = useState("");
-  const [editEventStart, setEditEventStart] = useState();
-  const [editEventEnd, setEditEventEnd] = useState();
+  const [editEventStart, setEditEventStart] = useState("");
+  const [editEventEnd, setEditEventEnd] = useState("");
   const [editEventTags, setEditEventTags] = useState([]);
-
 
   // Get event
   useEffect(() => {
-    axios.get("http://localhost:3000/api/events/" + id).then((res) => {
-      console.log(res.data);
-      setEditEventName(res.data.name);
-      setEditEventLocation(res.data.location);
-      setEditEventPrivate(res.data.isPrivate);
-      setEditEventDescription(res.data.description);
-      setEditEventStart(res.data.start);
-      setEditEventEnd(res.data.end);
-    }).catch((err) => {
-      console.error(err);
-    });
+    axios
+      .get("http://localhost:3000/api/events/" + id)
+      .then((res) => {
+        console.log(res.data);
+        setEditEventName(res.data.name);
+        setEditEventLocation(res.data.location);
+        setEditEventPrivate(res.data.isPrivate);
+        setEditEventDescription(res.data.description);
+        setEditEventStart(res.data.start);
+        setEditEventEnd(res.data.end);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }, [user]);
 
   if (router.isFallback) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   const backClick = () => {
@@ -93,11 +90,14 @@ const EditEventPage = ({ id }): JSX.Element => {
   const [tags, setTags] = useState<Tag[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("http://localhost:3000/api/tags").then((res) => {
-        setTags(res.data);
-      }).catch((err) => {
-        console.error(err);
-      });
+      axios
+        .post("http://localhost:3000/api/tags")
+        .then((res) => {
+          setTags(res.data);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     }
   }, [user]);
 
@@ -114,12 +114,11 @@ const EditEventPage = ({ id }): JSX.Element => {
       start: editEventStart,
       end: editEventEnd,
       tags: editEventTags,
-      uid: user.uid
+      uid: user?.uid,
     });
 
     router.push("/events");
   };
-
 
   return (
     <>
@@ -169,17 +168,29 @@ const EditEventPage = ({ id }): JSX.Element => {
             <DateTimePicker
               label="When?"
               value={dayjs(editEventStart)}
-              onChange={(e) => { setEditEventStart(e.format('M/D/YYYY, h:mm:ss A')) }}
+              onChange={(e) => {
+                if (e == undefined) {
+                  return;
+                }
+                setEditEventStart(e.format("M/D/YYYY, h:mm:ss A"));
+              }}
             />
-            <br /><br />
+            <br />
+            <br />
 
             <br />
             <DateTimePicker
               label="End At..."
               value={dayjs(editEventEnd)}
-              onChange={(e) => { setEditEventEnd(e.format('M/D/YYYY, h:mm:ss A')) }}
+              onChange={(e) => {
+                if (e == undefined) {
+                  return;
+                }
+                setEditEventEnd(e.format("M/D/YYYY, h:mm:ss A"));
+              }}
             />
-            <br /><br />
+            <br />
+            <br />
 
             {/* <Form.Label>Event Tags</Form.Label>
             <Multiselect
@@ -189,13 +200,9 @@ const EditEventPage = ({ id }): JSX.Element => {
               displayValue="name" // Property name to display in the dropdown options
             /> */}
 
-            <Button
-              variant="primary"
-              type="submit"
-            >
+            <Button variant="primary" type="submit">
               Edit Event
             </Button>
-
           </Form>
         </div>
       </div>
