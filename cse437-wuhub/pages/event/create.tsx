@@ -203,7 +203,7 @@ const CreateEvent = (): JSX.Element => {
           <h1>{"Make a New Event"}</h1>
           <Form onSubmit={(e) => handleAddEvent(e)}>
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>Event Name</Form.Label>
               <Form.Control
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
@@ -227,15 +227,6 @@ const CreateEvent = (): JSX.Element => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Check
-                label="Private"
-                type="checkbox"
-                checked={newEventPrivate}
-                onChange={(e) => setNewEventPrivate(e.target.checked)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
               <Form.Label>Associated Organization</Form.Label>
               <Form.Select
                 onChange={(e) => {
@@ -250,11 +241,20 @@ const CreateEvent = (): JSX.Element => {
               </Form.Select>
             </Form.Group>
 
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Private (Members Only)"
+                type="checkbox"
+                checked={newEventPrivate}
+                onChange={(e) => setNewEventPrivate(e.target.checked)}
+              />
+            </Form.Group>
+
             <Form.Label>Event Tags</Form.Label>
             <Multiselect
               options={tags} // Options to display in the dropdown
-              onSelect={(e) => setNewEventTags(e)} // Function will trigger on select event
-              onRemove={(e) => setNewEventTags(e)} // Function will trigger on remove event
+              onSelect={(e: any) => setNewEventTags(e)} // Function will trigger on select event
+              onRemove={(e: any) => setNewEventTags(e)} // Function will trigger on remove event
               displayValue="name" // Property name to display in the dropdown options
             />
 

@@ -31,7 +31,7 @@ const Home = (): JSX.Element => {
 
   return (
     <>
-      <Header user={null} />
+      <Header user={null} /> 
 
       <div className={styles.mainContent}>
         <div className={styles.mainContentLeft}>

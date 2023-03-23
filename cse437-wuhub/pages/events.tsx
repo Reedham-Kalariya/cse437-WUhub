@@ -144,7 +144,7 @@ const EventsPage = (): JSX.Element => {
 
   return (
     <>
-      <Header user={user} back={"/dashboard"} />
+      <Header user={user} />
 
       <div className={styles.mainContent}>
 

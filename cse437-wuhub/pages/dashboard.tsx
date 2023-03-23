@@ -139,7 +139,7 @@ const StudentDashboard = (): JSX.Element => {
   return (
     <>
 
-      <Header user={user} back={null} />
+      <Header user={user} />
 
       <div className={styles.mainContent}>
 

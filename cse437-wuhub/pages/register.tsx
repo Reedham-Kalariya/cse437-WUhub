@@ -1,12 +1,13 @@
 import { initializeApp } from "firebase/app";
 import { GetStaticProps, NextPage } from "next";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { init_firebase } from "@/firebase/firebase-config";
 
@@ -34,16 +35,13 @@ import {
   DocumentReference,
   updateDoc,
 } from "firebase/firestore";
-
-const firebase = init_firebase(); // initialize the Firebase app
-const firestore = init_firebase_storage();
-const auth = getAuth(); // get the authentication object
+import { Header } from "@/components/header";
 
 interface User {
   uid: string;
   firstName: string;
   lastName: string;
-  email: string
+  email: string;
 }
 
 interface Props {
@@ -52,23 +50,48 @@ interface Props {
 
 // define the RegisterPage functional component
 export default function RegisterPage() {
+  const firebase = init_firebase(); // initialize the Firebase app
+  const firestore = init_firebase_storage();
+  const auth = getAuth(); // get the authentication object
+
+  // Session Management
+  const [user, setUser] = useState(auth.currentUser);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(auth.currentUser);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [auth]);
 
   const router = useRouter();
 
-  async function addUser(uid: string, firstName: string, lastName: string, email: string | null) {
+  async function addUser(
+    uid: string,
+    firstName: string,
+    lastName: string,
+    email: string | null
+  ) {
     const eventCollection = collection(firestore, "users");
     await addDoc(eventCollection, {
       uid: uid,
       firstName: firstName,
       lastName: lastName,
-      email: email
+      email: email,
     });
-  };
+  }
 
   async function register() {
     console.log("register initiaited"); // log that registration is being initiated
-    let firstName = (document.getElementById("register-firstName")! as HTMLInputElement).value;
-    let lastName = (document.getElementById("register-lastName")! as HTMLInputElement).value;
+    let firstName = (
+      document.getElementById("register-firstName")! as HTMLInputElement
+    ).value;
+    let lastName = (
+      document.getElementById("register-lastName")! as HTMLInputElement
+    ).value;
     let email = (document.getElementById("register-email")! as HTMLInputElement)
       .value; // get the email entered by the user
     let password = (
@@ -79,7 +102,12 @@ export default function RegisterPage() {
     createUserWithEmailAndPassword(auth, email, password) // create a user with email and password using the Firebase authentication object
       .then((userCredential) => {
         verifyEmail(userCredential).then(() => {
-          addUser(userCredential.user.uid, firstName, lastName, userCredential.user.email)
+          addUser(
+            userCredential.user.uid,
+            firstName,
+            lastName,
+            userCredential.user.email
+          );
         });
       })
       .catch((err) => {
@@ -125,40 +153,25 @@ export default function RegisterPage() {
             If you have not received the email within a few minutes, please
             check your spam or junk folder as it may have been filtered there.
           </p>
-          <p>Once you're done, please log in.</p>
+          <p>Once you're done, please <a href="./login"> log in. </a></p>
         </Alert>
+        <Button variant="secondary" onClick={loginClick}></Button>
       </>,
       dialogBox
     );
   }
 
-  const backClick = () => {
+  const loginClick = () => {
     console.log("profile click");
-    router.push("/");
+    router.push("/login");
   };
 
   // render the register form
   return (
     <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button">Login for the full WU|Hub Experience!</div>
-        </div>
-      </div>
-
-      <Button
-          variant="secondary"
-          onClick={backClick}
-          className={styles.backToLandingBtn}
-        >
-          <strong>&lt;</strong> Back to Home
-        </Button>
+      <Header user={user} />
 
       <div className={styles.mainContent}>
-
         <Image
           src={brookings_seal}
           alt="brookings_seal"
@@ -168,7 +181,7 @@ export default function RegisterPage() {
         />
         <div className={styles.dialogBox} id="dialogBox">
           <Form>
-          <Form.Group className="mb-3">
+            <Form.Group className="mb-3">
               <Form.Label>First Name</Form.Label>
               <Form.Control
                 type="string"
@@ -209,6 +222,8 @@ export default function RegisterPage() {
             <Button variant="success" onClick={() => register()}>
               Submit
             </Button>
+            <br></br>
+            <p> Already have an account? <a href="./login"> Log in </a></p>
           </Form>
           <br></br>
 

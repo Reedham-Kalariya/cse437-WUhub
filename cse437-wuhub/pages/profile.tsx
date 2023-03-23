@@ -1,5 +1,10 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+} from "firebase/auth";
 import { useRouter } from "next/router";
 import { init_firebase } from "@/firebase/firebase-config";
 
@@ -27,12 +32,13 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useState } from "react";
+import { Header } from "@/components/header";
 
 interface User {
   uid: string;
   firstName: string;
   lastName: string;
-  email: string
+  email: string;
 }
 
 interface Props {
@@ -53,7 +59,7 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
       uid: data.uid,
       firstName: data.firstName,
       lastName: data.lastName,
-      email: data.email
+      email: data.email,
     } as User);
   });
 
@@ -68,6 +74,19 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
   const firebase = init_firebase(); // initialize the Firebase app
   const auth = getAuth(); // get the authentication object
 
+  // Session Management
+  const [user, setUser] = useState(auth.currentUser);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(auth.currentUser);
+      }
+    });
+    return () => {
+      unsubscribe();
+    }
+  }, [auth]);
+
   //let currentUser = auth.currentUser;
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   // Session Management
@@ -75,17 +94,12 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
     if (user) {
       //currentUser = auth.currentUser;
       setCurrentUser(auth.currentUser);
-    } 
+    }
   });
 
   console.log(currentUser);
 
   const router = useRouter();
-
-  const backClick = () => {
-    console.log("profile click");
-    router.push("/dashboard");
-  };
 
   const updateClick = () => {
     console.log("update click");
@@ -93,30 +107,14 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
   };
 
   if (currentUser == null) {
-    console.log("Loading...")
+    console.log("Loading...");
     return <div>Loading...</div>;
   }
 
   // render the Student Dashboard page
   return (
     <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
-        </div>
-        <div className="headerRight">
-          <div id="profile-button"> {currentUser?.email} </div>
-        </div>
-      </div>
-
-      
-      <Button
-        variant="secondary"
-        onClick={backClick}
-        className={styles.backToDashBtn}
-      >
-        <strong>&lt;</strong> Back to Dashboard
-      </Button>
+      <Header user={user} />
 
       <div className={styles.mainContent}>
         <div className={styles.mainContentCenter}>
@@ -128,13 +126,16 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
             className={styles.profile}
           ></Image>
           <div>
-            <p> Name: {posts.filter((post) => post.uid === currentUser?.uid).map((post) => {
-              return (
-                post.firstName + " " + post.lastName
-              );
-            })} </p>
+            <p>
+              {" "}
+              Name:{" "}
+              {posts
+                .filter((post) => post.uid === currentUser?.uid)
+                .map((post) => {
+                  return post.firstName + " " + post.lastName;
+                })}{" "}
+            </p>
             <p> Email: {currentUser?.email} </p>
-            <p> Unique UID: {currentUser?.uid} </p>
             <br></br>
             <Button onClick={updateClick} className="btn">
               {" "}
@@ -144,6 +145,7 @@ const ProfilePage = ({ posts }: Props): JSX.Element => {
         </div>
       </div>
     </>
-  )};
+  );
+};
 
 export default ProfilePage;
