@@ -17,30 +17,20 @@ export default async function handler(
 ) {
     const firestore = init_firebase_storage();
 
-    let { to, mode, conditions } = req.body;
-
-    if (mode == "discover") {
-        mode = '!='
-    }
-    else {
-        mode = '=='
-    }
-
+    let { conditions } = req.body;
 
     // Get document by ID
     try {
 
-        const filtered_list: string[] = [];
-        let q_graph;
-
+        let q_filter;
 
         if (conditions.length == 1) {
-            q_graph = query(collection(firestore, to), where(conditions[0]["field"], mode, conditions[0]["value"]));
+            q_filter = query(collection(firestore, "_links"), where(conditions[0]["field"], '==', conditions[0]["value"]));
         }
         else if (conditions.length == 2) {
-            q_graph = query(collection(firestore, to),
-                where(conditions[0]["field"], mode, conditions[0]["value"]),
-                where(conditions[1]["field"], mode, conditions[1]["value"])
+            q_filter = query(collection(firestore, "_links"),
+                where(conditions[0]["field"], '==', conditions[0]["value"]),
+                where(conditions[1]["field"], '==', conditions[1]["value"])
             );
             
         }
@@ -48,24 +38,10 @@ export default async function handler(
             res.status(404).end("Too many conditions were provided.");
             return;
         }
-
-        // Get filtered list
-        (await getDocs(q_graph)).forEach((doc) => {
-            const data = doc.data();
-            filtered_list.push(data.oid);
-        });
-
-        if (filtered_list.length == 0) {
-            res.status(200).json([]);
-        }
-
         // Get events
         const result: any[] = [];
-        const q_events = await query(collection(firestore, "organizations"), where('__name__', 'in', filtered_list));
-        (await getDocs(q_events)).forEach((doc) => {
-            const data = doc.data();
-            data.oid = doc.id;
-            result.push(data);
+        (await getDocs(q_filter)).forEach((doc) => {
+            result.push(doc.id);
         });
 
         res.status(200).json(result);
@@ -73,7 +49,7 @@ export default async function handler(
     }
     catch (err) {
         res.status(404).json({
-            "message": "An error occured while fetching an graph to organizations.",
+            "message": "An error occured while finding links files.",
             "error": err,
             "body": req.body
         })

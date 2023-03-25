@@ -6,16 +6,6 @@ import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "fir
 import axios from "axios";
 import { init_firebase, init_firebase_storage } from "@/firebase/firebase-config";
 import { Header } from "@/components/header"
-import {
-    collection,
-    addDoc,
-    getDoc,
-    deleteDoc,
-    doc,
-    getDocs,
-    updateDoc,
-    Timestamp
-} from "firebase/firestore";
 
 import Image from "next/image";
 import wuhub_logo from "@/resources/wuhub_logo.png";
@@ -39,7 +29,7 @@ let currentUser = auth.currentUser;
 const SingleOrgsPage = (): JSX.Element => {
 
     const router = useRouter();
-    let id = router.query.id;
+    const id = router.query.id;
 
     // Session Management
     const firebase = init_firebase();
@@ -56,10 +46,11 @@ const SingleOrgsPage = (): JSX.Element => {
         }
     }, [auth]);
 
+
     // Get organization
     const [org, setOrg] = useState<Organization>();
     useEffect(() => {
-        axios.get("http://localhost:3000/api/organizations/" + id).then((res) => {
+        axios.get("/api/organizations/" + id).then((res) => {
             setOrg(res.data);
         }).catch((err) => {
             console.error(err);
@@ -70,10 +61,12 @@ const SingleOrgsPage = (): JSX.Element => {
     // Get events
     const [events, setEvents] = useState<Event[]>([]);
     useEffect(() => {
-        axios.post("http://localhost:3000/api/events/graph/", {
+        axios.post("/api/events/graph/", {
             "to": "_hosts",
-            "field": "oid",
-            "value": id,
+            "conditions": [{
+                "field": "oid",
+                "value": id,
+            }]
         }).then((res) => {
             setEvents(res.data);
         }).catch((err) => {
@@ -91,7 +84,7 @@ const SingleOrgsPage = (): JSX.Element => {
 
     return (
         <>
-            <Header user={user} back={"/events"} />
+            <Header user={user} back={null} />
 
             <div className={styles.mainContent} style={{ flexDirection: 'column' }}>
                 <h1>{org?.name}</h1>

@@ -17,19 +17,24 @@ export default async function handler(
 ) {
     const firestore = init_firebase_storage();
 
-    const { to, field, value } = req.body;
+    const { eid } = req.body;
 
     // Get document by ID
     try {
 
+        res.status(200).json({
+            "name": "made it"
+        })
+
         const filtered_list: string[] = [];
-        let q_graph;
-        q_graph = query(collection(firestore, to), where(field, '!=', value));
+        let q_graph = query(collection(firestore, "_hosts"), where("eid", '==', eid));
+
 
         // Get filtered list
         (await getDocs(q_graph)).forEach((doc) => {
             const data = doc.data();
             filtered_list.push(data.oid);
+            return;
         });
 
         if (filtered_list.length == 0) {
@@ -43,19 +48,17 @@ export default async function handler(
             const data = doc.data();
             data.oid = doc.id;
             result.push(data);
+            return;
         });
 
-        res.status(200).json(result);
+        res.status(200).json(result[0]);
 
     }
     catch (err) {
         res.status(404).json({
-            "message": "An error occured while fetching an graph to organizations.",
+            "message": "An error occured while fetching a host organization.",
             "error": err,
-            "body": req.body,
-            "to": to,
-            "field": field,
-            "value": value
+            "body": req.body
         })
     }
 

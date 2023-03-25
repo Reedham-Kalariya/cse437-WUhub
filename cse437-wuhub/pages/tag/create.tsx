@@ -19,7 +19,7 @@ const firestore = init_firebase_storage();
 
 
 
-const CreateOrganization = (): JSX.Element => {
+const CreateTag = (): JSX.Element => {
 
   // Session Management
   const firebase = init_firebase();
@@ -40,11 +40,11 @@ const CreateOrganization = (): JSX.Element => {
   const router = useRouter();
   const [newTagName, setNewTagName] = useState("");
 
-  const handleAddOrg = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddTag = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Create a new tag, no other steps
-    axios.post("http://localhost:3000/api/tag/create/", {
+    axios.post("/api/tags/", {
       name: newTagName,
     });
 
@@ -53,12 +53,12 @@ const CreateOrganization = (): JSX.Element => {
 
   return (
     <>
-      <Header user={user} back={"/dashboard"} />
+      <Header user={user} />
 
       <div className={styles.mainContent}>
         <div className={styles.addOrgBox}>
           <h1>Create a New Tag</h1>
-          <Form onSubmit={(e) => handleAddOrg(e)}>
+          <Form onSubmit={(e) => handleAddTag(e)}>
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
@@ -80,4 +80,4 @@ const CreateOrganization = (): JSX.Element => {
   );
 };
 
-export default CreateOrganization;
+export default CreateTag;
