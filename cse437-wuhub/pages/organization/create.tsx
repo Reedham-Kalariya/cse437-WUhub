@@ -1,10 +1,7 @@
 import React, { useState, useEffect, ReactElement } from "react";
-import { GetStaticProps, NextPage } from "next";
-import { initializeApp } from "firebase/app";
 import { useRouter } from "next/router";
 import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { init_firebase, init_firebase_storage } from "@/firebase/firebase-config";
-import { useDocument, useCollection } from "react-firebase-hooks/firestore";
 import { Header } from "@/components/header"
 import axios from "axios";
 import Multiselect from 'multiselect-react-dropdown';
@@ -44,7 +41,7 @@ const CreateOrganization = (): JSX.Element => {
   const [tags, setTags] = useState<Tag[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("http://localhost:3000/api/tags").then((res) => {
+      axios.get("/api/tags").then((res) => {
         setTags(res.data);
       }).catch((err) => {
         console.error(err);
@@ -61,19 +58,19 @@ const CreateOrganization = (): JSX.Element => {
     e.preventDefault();
     
     // Create a new organization, attach the creator as a member
-    axios.post("http://localhost:3000/api/organizations/create/", {
+    await axios.post("/api/organizations/", {
       name: newOrgName,
       description: newOrgDescription,
       tags: newOrgTags,
       uid: user?.uid
     });
 
-    router.push("/organizations");
+    router.push("/dashboard");
   };
 
   return (
     <>
-      <Header user={user} back={"/events"} />
+      <Header user={user} />
 
       <div className={styles.mainContent}>
         <div className={styles.addOrgBox}>

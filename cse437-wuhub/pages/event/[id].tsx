@@ -43,12 +43,12 @@ const SingleEventPage = (): JSX.Element => {
         }
     }, [auth]);
 
-    
+    const router = useRouter();
 
     // Get event
     const [event, setEvent] = useState<Event>();
     useEffect(() => {
-        axios.get("http://localhost:3000/api/events/" + id).then((res) => {
+        axios.get("/api/events/" + id).then((res) => {
             setEvent(res.data);
         }).catch((err) => {
             console.error(err);
@@ -59,14 +59,10 @@ const SingleEventPage = (): JSX.Element => {
         return <div>Loading...</div>
     }
 
-    const backClick = () => {
-        router.push("/organizations");
-    };
-
 
     return (
         <>
-            <Header user={user} back={"/events/"} />
+            <Header user={user} back={null} />
 
             <div className={styles.mainContent} style={{flexDirection: 'column'}}>
                 <h1>{event?.name}</h1>

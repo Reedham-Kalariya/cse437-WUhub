@@ -61,48 +61,14 @@ const StudentDashboard = (): JSX.Element => {
   // END OF Auth & Session Management
 
 
-  // Get organization where the user is exec
-  const [execOrgs, setExecOrgs] = useState<Organization[]>([]);
+  // Get events
+  const [events, setEvents] = useState<Event[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("/api/organizations/graph/", {
-        "to": "_memberships",
-        "conditions": [
-          {
-            "field": "uid",
-            "value": user?.uid
-          },
-          {
-            "field": "role",
-            "value": "exec"
-          }
-        ]
+      axios.post("/api/events/notJoined/", {
+        "uid": user?.uid
       }).then((res) => {
-        setExecOrgs(res.data);
-      }).catch((err) => {
-        console.error(err);
-      });
-    }
-  }, [user]);
-
-  // Get organization where the user is exec
-  const [memberOrgs, setMemberOrgs] = useState<Organization[]>([]);
-  useEffect(() => {
-    if (user) {
-      axios.post("/api/organizations/graph/", {
-        "to": "_memberships",
-        "conditions": [
-          {
-            "field": "uid",
-            "value": user?.uid
-          },
-          {
-            "field": "role",
-            "value": "member"
-          }
-        ]
-      }).then((res) => {
-        setMemberOrgs(res.data);
+        setEvents(res.data);
       }).catch((err) => {
         console.error(err);
       });
@@ -110,28 +76,15 @@ const StudentDashboard = (): JSX.Element => {
   }, [user]);
 
 
-  // Get events where the user can have edit/delete power
-  const [myEvents, setMyEvents] = useState<Event[]>([]);
-  useEffect(() => {
-    if (user) {
-      axios.post("/api/organizations/getMyEvents/", {
-        "uid": user?.uid,
-      }).then((res) => {
-        setMyEvents(res.data);
-      }).catch((err) => {
-        console.error(err);
-      });
-    }
-  }, [user]);
 
-  // Get events where the user can have edit/delete power
-  const [attendingEvents, setAttendingEvents] = useState<Event[]>([]);
+  // Get organizations
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("/api/events/attending", {
-        "uid": user?.uid,
+      axios.post("/api/organizations/notJoined/", {
+        "uid": user?.uid
       }).then((res) => {
-        setAttendingEvents(res.data);
+        setOrganizations(res.data);
       }).catch((err) => {
         console.error(err);
       });
@@ -180,7 +133,7 @@ const StudentDashboard = (): JSX.Element => {
         router.reload();
       })
       .catch((err) => {
-        router.reload();
+        alert("Failed to delete the event.");
       })
   }
   const handleRSVPEvent = (eid: string) => {
@@ -189,7 +142,7 @@ const StudentDashboard = (): JSX.Element => {
       "uid": user?.uid
     })
       .then((res) => {
-        router.reload();
+        router.push("/dashboard");
       })
       .catch((err) => {
         alert("Failed to delete the organization.");
@@ -226,15 +179,6 @@ const StudentDashboard = (): JSX.Element => {
         alert("Failed to delete the organization.");
       })
   }
-  const handleQuitOrg = (oid: string) => {
-    axios.post("/api/organizations/join", {
-      "oid": oid,
-      "uid": user?.uid,
-      "type": "delete"
-    }).then((res) => {
-      router.reload();
-    })
-  }
 
   // render the Student Dashboard page
   return (
@@ -244,45 +188,15 @@ const StudentDashboard = (): JSX.Element => {
 
       <div className={styles.mainContent}>
 
-        <h1>Hey, {profile?.firstName}!</h1>
+        <h1>Discover</h1>
 
         <div className={styles.orgs}>
 
-          {execOrgs.length != 0 && (
+          {events.length != 0 && (
             <>
-              <h3> My Organizations </h3>
-              <div className={styles.card_container}>
-                {execOrgs
-                  .map((post) => {
-                    return (
-                      <Card
-                        key={post.oid}
-                        className={styles.org}
-                        style={{ width: "18rem" }}
-                      >
-                        <Card.Body>
-                          <Card.Title>{post.name}</Card.Title>
-                          <Card.Text>{post.description}</Card.Text>
-                          <ButtonGroup aria-label="Basic example">
-                            <Button variant="primary" onClick={() => handleViewOrganization(post.oid)}>View</Button>
-                            <Button variant="secondary" onClick={() => handleEditOrganization(post.oid)}>Edit</Button>
-                            <Button variant="danger" onClick={() => handleDeleteOrganization(post.oid)}>Delete</Button>
-                          </ButtonGroup>
-                        </Card.Body>
-                      </Card>
-                    );
-                  })}
-              </div>
-            </>
-          )}
-
-
-          {myEvents.length != 0 && (
-            <>
-              <h3>My Events</h3>
+              <h3> More Events you may like...</h3>
               <div className={styles.card_container} >
-
-                {myEvents
+                {events
                   .map((event) => {
                     return (
                       <Card
@@ -295,45 +209,25 @@ const StudentDashboard = (): JSX.Element => {
                           <Card.Text>
                             {event.start} - {event.end}
                           </Card.Text>
-                          <Card.Text>
-                            {event.start} - {event.end}
-                          </Card.Text>
                           <ButtonGroup aria-label="Basic example">
                             <Button variant="primary" onClick={() => handleViewEvent(event.eid)}>View</Button>
-                            <Button variant="secondary" onClick={() => handleEditEvent(event.eid)}>Edit</Button>
-                            <Button variant="danger" onClick={() => handleDeleteEvent(event.eid)}>Delete</Button>
+                            <Button variant="secondary" onClick={() => handleRSVPEvent(event.eid)}>RSVP</Button>
                           </ButtonGroup>
                         </Card.Body>
                       </Card>
                     );
                   })}
-
               </div>
             </>
           )}
 
-          <ButtonGroup>
-            <Button
-              variant="primary"
-              className={styles.btn}
-              onClick={(e) => { router.push("/organization/create") }}
-            >
-              Create a New Organization
-            </Button>
-            <Button
-              variant="secondary"
-              className={styles.btn}
-              onClick={(e) => { router.push("/event/create") }}
-            >
-              Create a New Event
-            </Button>
-          </ButtonGroup>
 
-          {memberOrgs.length != 0 && (
+
+          {organizations.length != 0 && (
             <>
-              <h3> Memberships </h3>
+              <h3> Join a New Organization </h3>
               <div className={styles.card_container}>
-                {memberOrgs
+                {organizations
                   .map((post) => {
                     return (
                       <Card
@@ -346,7 +240,7 @@ const StudentDashboard = (): JSX.Element => {
                           <Card.Text>{post.description}</Card.Text>
                           <ButtonGroup aria-label="Basic example">
                             <Button variant="primary" onClick={() => handleViewOrganization(post.oid)}>View</Button>
-                            <Button variant="danger" onClick={() => handleQuitOrg(post.oid)}>Leave</Button>
+                            <Button variant="secondary" onClick={() => handleJoinOrg(post.oid)}>Join</Button>
                           </ButtonGroup>
                         </Card.Body>
                       </Card>
@@ -355,8 +249,6 @@ const StudentDashboard = (): JSX.Element => {
               </div>
             </>
           )}
-
-
 
         </div>
       </div>

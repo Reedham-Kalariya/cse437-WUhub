@@ -59,12 +59,12 @@ export default async function handler(
             res.status(200).json([]);
         }
 
-        // Get events
+        // Get memberships
         const result: any[] = [];
-        const q_events = await query(collection(firestore, "organizations"), where('__name__', 'in', filtered_list));
-        (await getDocs(q_events)).forEach((doc) => {
+        const q_memberships = await query(collection(firestore, "memberships"), where('__name__', 'in', filtered_list));
+        (await getDocs(q_memberships)).forEach((doc) => {
             const data = doc.data();
-            data.oid = doc.id;
+            data.id = doc.id;
             result.push(data);
         });
 
@@ -73,7 +73,7 @@ export default async function handler(
     }
     catch (err) {
         res.status(404).json({
-            "message": "An error occured while fetching an graph to organizations.",
+            "message": "An error occured while fetching an graph to memberships.",
             "error": err,
             "body": req.body
         })

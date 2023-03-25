@@ -17,58 +17,54 @@ export default async function handler(
 ) {
     const firestore = init_firebase_storage();
 
-    let { to, mode, conditions } = req.body;
-
-    if (mode == "discover") {
-        mode = '!='
-    }
-    else {
-        mode = '=='
-    }
+    let { uid } = req.body;
 
 
     // Get document by ID
     try {
 
-        const filtered_list: string[] = [];
-        let q_graph;
 
+        // Convert user to org
+        const exec_orgs_list: string[] = [];
+        const q_graph = query(collection(firestore, "_memberships"), 
+            where("uid", '==', uid),
+            where("role", '==', "exec")
+        );
 
-        if (conditions.length == 1) {
-            q_graph = query(collection(firestore, to), where(conditions[0]["field"], mode, conditions[0]["value"]));
-        }
-        else if (conditions.length == 2) {
-            q_graph = query(collection(firestore, to),
-                where(conditions[0]["field"], mode, conditions[0]["value"]),
-                where(conditions[1]["field"], mode, conditions[1]["value"])
-            );
-            
-        }
-        else {
-            res.status(404).end("Too many conditions were provided.");
-            return;
-        }
-
-        // Get filtered list
         (await getDocs(q_graph)).forEach((doc) => {
             const data = doc.data();
-            filtered_list.push(data.oid);
+            exec_orgs_list.push(data.oid);
         });
 
-        if (filtered_list.length == 0) {
-            res.status(200).json([]);
-        }
+        // Convert org to event
+        const filtered_list: string[] = [];
+        const q_graph2 = query(collection(firestore, "_hosts"), 
+            where("oid", 'in', exec_orgs_list)
+        );
 
-        // Get events
+        (await getDocs(q_graph2)).forEach((doc) => {
+            const data = doc.data();
+            filtered_list.push(data.eid);
+        });
+
+        // Get events of the user's exec organizations
         const result: any[] = [];
-        const q_events = await query(collection(firestore, "organizations"), where('__name__', 'in', filtered_list));
+        const q_events = await query(collection(firestore, "events"), 
+            where('__name__', 'in', filtered_list)
+        );
         (await getDocs(q_events)).forEach((doc) => {
             const data = doc.data();
-            data.oid = doc.id;
+            data.eid = doc.id;
+            data.start = data.start.toDate().toLocaleString();
+            data.end = data.end.toDate().toLocaleString();
+
             result.push(data);
         });
 
         res.status(200).json(result);
+
+        
+
 
     }
     catch (err) {

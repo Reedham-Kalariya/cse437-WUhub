@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { init_firebase_storage } from "../firebase/firebase-config";
+import { getAuth } from "firebase/auth"
 
 // Bootstrap
 import Button from "react-bootstrap/Button";
@@ -11,8 +12,10 @@ import styles from "@/styles/EventsPage.module.css";
 import Image from "next/image";
 import wuhub_logo from "@/resources/wuhub_logo.png";
 
-export const Header = (user: any, back: string) => {
-  const router = useRouter();
+
+export const Header = ({ user, back }) => {
+
+    const router = useRouter();
 
   const firestore = init_firebase_storage();
 
@@ -41,71 +44,69 @@ export const Header = (user: any, back: string) => {
   };
 
   const logoutClick = () => {
-    router.push("/");
-    // auth.signOut().then(
-    //   function () {
-    //     console.log("Signed Out");
-    //     router.push("/");
-    //   },
-    //   function (error) {
-    //     console.error("Sign Out Error", error);
-    //   }
-    // );
+    router.push("/logout");
   };
 
-  return (
-    <>
-      <div className="header">
-        <div className="headerLeft">
-          <Image
-            src={wuhub_logo}
-            alt="wuhub_logo"
-            className="wuhubLogo"
-            onClick={() => {
-              router.push("./dashboard");
-            }}
-          />
-        </div>
-        <span>{user?.email}</span>
-        <div className="headerRight">
-          <div id="profile-button">
-            <ButtonGroup>
-              {user == null && (
-                <Button
-                  variant="secondary"
-                  id="logout_btn"
-                  onClick={loginClick}
-                >
-                  Log In
-                </Button>
-              )}
-              {user != null && (
-                <Button
-                  variant="secondary"
-                  id="logout_btn"
-                  onClick={logoutClick}
-                >
-                  Log Out
-                </Button>
-              )}
-              <Button
-                variant="secondary"
-                id="profile_btn"
-                onClick={profileClick}
-              >
-                Profile
-              </Button>
-              <Button
-                variant="secondary"
-                id="res_and_pol_btn"
-                onClick={resourcesClick}
-              >
-                Resources and Policies
-              </Button>
-            </ButtonGroup>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
+    return (
+        <>
+            <div className="header">
+
+                <div className="headerLeft">
+                    <Image src={wuhub_logo} alt="wuhub_logo" className="wuhubLogo" />
+                </div>
+                <span>{user?.email}</span>
+                <div className="headerRight">
+                    <div id="profile-button">
+                        <ButtonGroup>
+                            <Button
+                                variant="secondary"
+                                id="profile_btn"
+                                onClick={(e) => router.push("/dashboard")}
+                            >
+                                Dashboard
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                id="profile_btn"
+                                onClick={(e) => router.push("/discover")}
+                            >
+                                Discover
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                id="profile_btn"
+                                onClick={(e) => router.push("/events")}
+                            >
+                                Events
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                id="profile_btn"
+                                onClick={(e) => router.push("/organizations")}
+                            >
+                                Organizations
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                id="res_and_pol_btn"
+                                onClick={resourcesClick}
+                            >
+                                Resources and Policies
+                            </Button>
+                            {user == null && (
+                                <Button variant="secondary" id="logout_btn" onClick={loginClick}>
+                                    Log In
+                                </Button>
+                            )}
+                            {user != null && (
+                                <Button variant="secondary" id="logout_btn" onClick={logoutClick}>
+                                    Log Out
+                                </Button>
+                            )}
+                        </ButtonGroup>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}

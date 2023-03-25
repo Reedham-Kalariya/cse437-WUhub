@@ -32,55 +32,6 @@ import { Organization, Membership, User } from "@/types"
 
 const firestore = init_firebase_storage();
 
-// export const getStaticProps: GetStaticProps<Props> = async () => {
-
-//   const postsCollection = await collection(firestore, "organizations");
-//   const postsQuerySnapshot = await getDocs(postsCollection);
-
-//   const postData: Organization[] = [];
-//   postsQuerySnapshot.forEach((doc) => {
-//     const data = doc.data();
-
-//     postData.push({
-//       id: doc.id,
-//       name: data.name,
-//       desc: data.desc,
-//     } as Organization);
-//   });
-
-//   const membershipCollection = await collection(firestore, "memberships");
-//   const membershipQuerySnapshot = await getDocs(membershipCollection);
-
-//   const membershipsData: Membership[] = [];
-//   membershipQuerySnapshot.forEach((doc) => {
-//     const data = doc.data();
-//     membershipsData.push({
-//       oid: data.oid,
-//       uid: data.uid,
-//       title: data.title,
-//       orgName: data.orgName,
-//     } as Membership);
-//   });
-
-//   const userCollection = await collection(firestore, "users");
-//   const userQuerySnapshot = await getDocs(userCollection);
-
-//   const usersData: User[] = [];
-//   userQuerySnapshot.forEach((doc) => {
-//     const data = doc.data();
-//     usersData.push({
-//       uid: data.uid,
-//       firstName: data.firstName,
-//       lastName: data.lastName,
-//       email: data.email,
-//     } as User);
-//   });
-
-//   return {
-//     props: { posts: postData, initMemberships: membershipsData, users: usersData },
-//   };
-// };
-
 const OrganizationsPage = (): JSX.Element => {
 
   // Session Management
@@ -128,15 +79,8 @@ const OrganizationsPage = (): JSX.Element => {
 
   return (
     <>
-      <Header user={user} back={"/dashboard"} />
-
-      <Button
-        variant="secondary"
-        onClick={backClick}
-        className={styles.backToLandingBtn}
-      >
-        <strong>&lt;</strong> Back to Home
-      </Button>
+      <Header user={user} back={null} />
+      
       <div className={styles.mainContent}>
 
         <div className={styles.currentOrgsBox}>

@@ -49,6 +49,7 @@ const EditEventPage = (): JSX.Element => {
     };
   }, [auth]);
 
+
   // Initiate State Variables
   const [editEventID, setEditEventID] = useState("placeholder_for_database");
   const [editEventName, setEditEventName] = useState("");
@@ -61,20 +62,17 @@ const EditEventPage = (): JSX.Element => {
 
   // Get event
   useEffect(() => {
-    axios
-      .get("http://localhost:3000/api/events/" + id)
-      .then((res) => {
-        console.log(res.data);
-        setEditEventName(res.data.name);
-        setEditEventLocation(res.data.location);
-        setEditEventPrivate(res.data.isPrivate);
-        setEditEventDescription(res.data.description);
-        setEditEventStart(res.data.start);
-        setEditEventEnd(res.data.end);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    axios.get("/api/events/" + id).then((res) => {
+      console.log(res.data);
+      setEditEventName(res.data.name);
+      setEditEventLocation(res.data.location);
+      setEditEventPrivate(res.data.isPrivate);
+      setEditEventDescription(res.data.description);
+      setEditEventStart(res.data.start);
+      setEditEventEnd(res.data.end);
+    }).catch((err) => {
+      console.error(err);
+    });
   }, [user]);
 
   if (router.isFallback) {
@@ -90,14 +88,11 @@ const EditEventPage = (): JSX.Element => {
   const [tags, setTags] = useState<Tag[]>([]);
   useEffect(() => {
     if (user) {
-      axios
-        .post("http://localhost:3000/api/tags")
-        .then((res) => {
-          setTags(res.data);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+      axios.post("/api/tags").then((res) => {
+        setTags(res.data);
+      }).catch((err) => {
+        console.error(err);
+      });
     }
   }, [user]);
 
@@ -105,7 +100,7 @@ const EditEventPage = (): JSX.Element => {
     e.preventDefault();
 
     // Create a new event, add organization as host, add user as rsvp, add tag associations
-    axios.post("http://localhost:3000/api/events/update/", {
+    axios.put("/api/events/" + id, {
       eid: id,
       name: editEventName,
       location: editEventLocation,
@@ -114,7 +109,7 @@ const EditEventPage = (): JSX.Element => {
       start: editEventStart,
       end: editEventEnd,
       tags: editEventTags,
-      uid: user?.uid,
+      uid: user?.uid
     });
 
     router.push("/events");
@@ -122,7 +117,7 @@ const EditEventPage = (): JSX.Element => {
 
   return (
     <>
-      <Header user={user} back={"/events"} />
+      <Header user={user} back={null} />
 
       <div className={styles.mainContent}>
         <div className={styles.addEventsBox} id="addEventsBox">

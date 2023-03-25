@@ -44,12 +44,44 @@ const CreateEvent = (): JSX.Element => {
   const firebase = init_firebase();
   const auth = getAuth();
 
+  let notFindingUserGate = false;
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [user, setUser] = useState(auth.currentUser);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+
       if (user) {
         setUser(auth.currentUser);
+        notFindingUserGate = false;
+        axios.post("/api/organizations/graph/", {
+          "to": "_memberships",
+          "conditions": [
+            {
+              "field": "uid",
+              "value": user?.uid
+            },
+            {
+              "field": "role",
+              "value": "exec"
+            }
+          ]
+        }).then((res) => {
+          setOrganizations(res.data);
+          if (res.data.length == 0) {
+            router.push('/unauthorized');
+          }
+        }).catch((err) => {
+          console.error(err);
+        });
+        return;
       }
+
+      // Protected Page, must be signed in
+      if (notFindingUserGate) {
+        router.push('/unauthorized');
+      }
+      notFindingUserGate = true;
     });
     return () => {
       unsubscribe();
@@ -57,37 +89,13 @@ const CreateEvent = (): JSX.Element => {
   }, [auth]);
 
 
-  // Get organizations where the user is exec
-  //
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  useEffect(() => {
-    if (user) {
-      axios.post("/api/organizations/graph/", {
-        "to": "_memberships",
-        "conditions": [
-          {
-            "field": "uid",
-            "value": user?.uid
-          },
-          {
-            "field": "role",
-            "value": "exec"
-          }
-        ]
-      }).then((res) => {
-        setOrganizations(res.data);
-      }).catch((err) => {
-        console.error(err);
-      });
-    }
-  }, [user]);
 
   // Get tags
   //
   const [tags, setTags] = useState<Tag[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("http://localhost:3000/api/tags").then((res) => {
+      axios.get("/api/tags").then((res) => {
         setTags(res.data);
       }).catch((err) => {
         console.error(err);
@@ -114,7 +122,7 @@ const CreateEvent = (): JSX.Element => {
     e.preventDefault();
 
     // Create a new event, add organization as host, add user as rsvp, add tag associations
-    axios.post("http://localhost:3000/api/events/create/", {
+    await axios.post("/api/events/", {
       name: newEventName,
       location: newEventLocation,
       isPrivate: newEventPrivate,
@@ -124,79 +132,15 @@ const CreateEvent = (): JSX.Element => {
       oid: newEventOID,
       tags: newEventTags,
       uid: user?.uid
+      uid: user?.uid
     });
 
-    router.push("/events");
+    router.push("/dashboard");
   };
-
-
-
-  // Get organizations for which the user is an exec
-  // const getOrgsOfUser = async (user: any) => {
-  //   if (user.userCurrent == null) {
-  //     return;
-  //   }
-
-  //   const uid = user.userCurrent.uid;
-  //   const orgs = new Map<string, string>();
-  //   const q = query(
-  //     collection(firestore, "memberships"),
-  //     where("uid", "==", uid),
-  //     where("title", "==", "exec")
-  //   );
-  //   const querySnapshot = await getDocs(q);
-  //   querySnapshot.forEach((doc) => {
-  //     orgs.set(doc.data().orgName, doc.data().oid);
-  //   });
-  //   return orgs;
-  // };
-
-  // async function rsvp(eventid: string) {
-  //   const userid = currentUser?.uid;
-  //   const rsvpCollection = collection(firestore, "rsvp");
-  //   console.log(userid);
-  //   let i = 0;
-  //   rsvps.filter((rsvp: RSVP) => rsvp.eid === eventid).filter((rsvp: RSVP) => rsvp.uid === userid).map((rsvp: RSVP) => {
-  //       i = i + 1;
-  //       return;
-  //     });
-  //   console.log(
-  //     "number of rsvps with same uid: " + i + " and userid: " + userid
-  //   );
-
-  //   if (i === 0) {
-  //     if (typeof userid !== "undefined") {
-  //       const r:RSVP = {
-  //         uid: userid,
-  //         eid: eventid,
-  //       };
-  //       await addDoc(rsvpCollection, r);
-  //       setRsvps([...rsvps, r]);
-  //       alert("You have successfully RSVPed");
-  //     } else {
-  //       alert("Please sign in to RSVP");
-  //     }
-  //   } else {
-  //     alert("You have already RSVPed to this event");
-  //   }
-  // }
-
-  // function checkOrgsValuesForSpecificID(oid: string): boolean {
-  //   const iterator_object = orgs.values();
-  //   let nextValue = iterator_object.next();
-
-  //   while (!nextValue.done) {
-  //     if (nextValue.value == oid) {
-  //       return true;
-  //     }
-  //     nextValue = iterator_object.next();
-  //   }
-  //   return false;
-  // }
 
   return (
     <>
-      <Header user={user} back={"/events"} />
+      <Header user={user} back={null} />
 
       <div className={styles.mainContent}>
         <div className={styles.addEventsBox} id="addEventsBox">
@@ -239,15 +183,6 @@ const CreateEvent = (): JSX.Element => {
                   <option key={org.oid} value={org.oid}>{org.name}</option>
                 ))}
               </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                label="Private (Members Only)"
-                type="checkbox"
-                checked={newEventPrivate}
-                onChange={(e) => setNewEventPrivate(e.target.checked)}
-              />
             </Form.Group>
 
             <Form.Label>Event Tags</Form.Label>

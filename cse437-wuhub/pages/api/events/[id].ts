@@ -1,7 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { doc, getDoc, Timestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, Timestamp, updateDoc, query, collection, deleteDoc } from "firebase/firestore";
 import { init_firebase, init_firebase_storage } from "@/firebase/firebase-config";
+import axios from 'axios';
 
 const firestore = init_firebase_storage();
 
@@ -25,14 +26,15 @@ export default function handler(
 
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
-    const id = req.query.id as string;
+    const eid = req.query.id as string;
 
     // Get document by ID
-    const docRef = doc(firestore, "events/" + id);
+    const docRef = doc(firestore, "events/" + eid);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
         const data = docSnap.data();
+        data.id = docSnap.id;
         data.start = data.start.toDate().toLocaleString();
         data.end = data.end.toDate().toLocaleString();
 
@@ -40,11 +42,6 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
     } else {
         res.status(404).end("error");
     }
-
-}
-
-
-async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
 }
 
@@ -87,13 +84,93 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
     }
 }
 
-
-async function handlePatch(req: NextApiRequest, res: NextApiResponse) {
-
-}
-
-
-
 async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
+
+    const eid = req.query.id as string;
+
+    try {
+
+        await deleteDoc(doc(firestore, "events", eid));
+
+
+        try {
+            // Trim RSVP branches
+            let event_org: any[] = [];
+            await axios.post("/api/hosts/find", {
+                "conditions": [
+                    {
+                        "field": "eid",
+                        "value": eid
+                    }
+                ]
+            }).then((res) => {
+                event_org = res.data();
+            }).catch((err) => {
+                res.status(404).json("Error trimming host branches")
+            });
+
+            const org_count = event_org.length;
+            event_org?.forEach((rsvp) => {
+                deleteDoc(doc(firestore, "_hosts", rsvp.id));
+            })
+
+
+            // Trim RSVP branches
+            let event_rsvps: any[] = [];
+            await axios.post("/api/rsvps/find", {
+                "conditions": [
+                    {
+                        "field": "eid",
+                        "value": eid
+                    }
+                ]
+            }).then((res) => {
+                event_rsvps = res.data();
+            }).catch((err) => {
+                res.status(404).json("Error trimming rsvp branches")
+            })
+
+            const rsvps_count = event_rsvps.length;
+            event_rsvps?.forEach((rsvp) => {
+                deleteDoc(doc(firestore, "_rsvps", rsvp.id));
+            })
+
+
+
+            // Trim tag branches
+            let event_tags: any[] = [];
+            await axios.post("/api/tags/graph", {
+                "to": "_links",
+                "conditions": [
+                    {
+                        "field": "eid",
+                        "value": eid
+                    }
+                ]
+            }).then((res) => {
+                event_tags = res.data();
+            }).catch((err) => {
+                res.status(404).json("Error trimming branches")
+            })
+
+            const tags_count = event_tags.length;
+            event_tags?.forEach((rsvp) => {
+                deleteDoc(doc(firestore, "_links", rsvp.id));
+            })
+        }
+        catch (err) {
+            res.status(404).json({
+                "message": "Success, but error while trimming",
+            })
+        }
+
+
+        res.status(200).json({
+            "success": true
+        });
+    }
+    catch (err) {
+        res.status(404).end(req.body)
+    }
 
 }

@@ -15,6 +15,22 @@ import wuhub_logo from "../resources/wuhub_logo.png";
 
 const Home = (): JSX.Element => {
 
+  // Session Management
+  const firebase = init_firebase();
+  const auth = getAuth();
+
+  const [user, setUser] = useState(auth.currentUser);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(auth.currentUser);
+      }
+    });
+    return () => {
+      unsubscribe();
+    }
+  }, [auth]);
+
   const router = useRouter();
 
   const loginClick = () => {
@@ -27,6 +43,10 @@ const Home = (): JSX.Element => {
 
   const updateProfile = () => {
     router.push("/UpdateProfilePage");
+  };
+
+  const logoutClick = () => {
+    auth.signOut();
   };
 
   return (
@@ -54,6 +74,7 @@ const Home = (): JSX.Element => {
               {" "}
               Login{" "}
             </Button>
+            <Button onClick={logoutClick}>Logout</Button>
             <Button variant="secondary" onClick={registerClick}>
               {" "}
               Don't have an account? Join today!{" "}

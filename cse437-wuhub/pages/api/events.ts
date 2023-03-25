@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getFirestore, doc, addDoc, collection, getDocs, query, limit, Timestamp } from "firebase/firestore";
 import { init_firebase, init_firebase_storage } from "@/firebase/firebase-config";
+import axios from "axios";
 
 const firestore = init_firebase_storage();
 
@@ -23,24 +24,20 @@ export default function handler(
 
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
-    let quantity = 100;
-    if (req.query.quantity != undefined) {
-        quantity = parseInt(req.query.quantity as string)
-    }
 
     // Get document by ID
     try {
-        const postsCollection = await query(collection(firestore, "events"), limit(quantity));
+        const postsCollection = await query(collection(firestore, "events"));
         const postsQuerySnapshot = await getDocs(postsCollection);
 
-        const postData : any= [];
+        const postData: any[] = [];
         postsQuerySnapshot.forEach((doc) => {
             const data = doc.data();
             data.eid = doc.id;
-            data.start = data.start.toDate().toLocaleString()
-            data.end = data.end.toDate().toLocaleString()
+            data.start = data.start.toDate().toLocaleString();
+            data.end = data.end.toDate().toLocaleString();
 
-            postData.push(data as Event);
+            postData.push(data);
 
         });
 
@@ -56,23 +53,23 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
-    const { 
-        name, 
+    const {
+        name,
         location,
         isPrivate,
         description,
         start,
         end,
         oid,
-        tags, 
-        uid 
+        tags,
+        uid
     } = req.body;
-    
+
     try {
 
         const startTime = Timestamp.fromMillis(Date.parse(start));
         const endTime = Timestamp.fromMillis(Date.parse(end));
-        
+
         // Create new document in events
         const q_events = await collection(firestore, "events");
         const eventSnapshot = await addDoc(q_events, {
@@ -96,16 +93,17 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         // _RSVPS: Create new edge: the creator immidiately is signed up to attend the event
         const q_rsvps = await collection(firestore, "_rsvps");
         await addDoc(q_rsvps, {
-            "oid": oid,
+            "uid": uid,
             "eid": eid,
+            "type": "creator"
         })
 
         // _ASSOCIATIONS: Create new edge for each added tag
         const q_asso = await collection(firestore, "_tag_associations");
-        tags.forEach((tag : any) => {
+        tags.forEach((tag: any) => {
             addDoc(q_asso, {
-                "tid": tag.id,
-                "eid": eid,
+                "tag_id": tag.id,
+                "item_id": eid,
                 "type": "event"
             })
         })

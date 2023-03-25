@@ -7,7 +7,7 @@ const firestore = init_firebase_storage();
 
 export default async function handler (req: NextApiRequest, res: NextApiResponse) {
 
-    const { oid, uid, type } = req.body;
+    const { eid, uid, type } = req.body;
 
     if (type == "delete") {
         return handleDelete(req, res);
@@ -16,11 +16,11 @@ export default async function handler (req: NextApiRequest, res: NextApiResponse
     try {
 
         // Create new edge: user & organization
-        const q_memberships = await collection(firestore, "_memberships");
+        const q_memberships = await collection(firestore, "_rsvps");
         await addDoc(q_memberships, {
-            "oid": oid,
+            "eid": eid,
             "uid": uid,
-            "role": "member"
+            "role": "participant"
         })
 
         res.status(200).json("success");
@@ -34,9 +34,9 @@ async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
 
     try {
 
-        const { oid, uid } = req.body;
+        const { eid, uid } = req.body;
 
-        const docsRef = await query(collection(firestore, "_memberships"), where("uid", '==', uid), where("oid", '==', oid));
+        const docsRef = await query(collection(firestore, "_rsvps"), where("uid", '==', uid), where("eid", '==', eid));
 
         const filtered_list: any[] = [];
         (await getDocs(docsRef)).forEach((doc) => {
@@ -48,7 +48,7 @@ async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
 
         const the_id = filtered_list[0].id;
 
-        await deleteDoc(doc(firestore, "_memberships" + the_id));
+        await deleteDoc(doc(firestore, "_rsvps" + the_id));
 
         res.status(200).json("success");
     }

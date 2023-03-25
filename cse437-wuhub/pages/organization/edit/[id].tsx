@@ -46,7 +46,7 @@ const EditOrganization = (): JSX.Element => {
 
   // Get organization
   useEffect(() => {
-    axios.get("http://localhost:3000/api/organizations/" + id).then((res) => {
+    axios.get("/api/organizations/" + id).then((res) => {
       setEditOrgName(res.data.name);
       setEditOrgDescription(res.data.description);
     }).catch((err) => {
@@ -68,7 +68,7 @@ const EditOrganization = (): JSX.Element => {
   const [tags, setTags] = useState<Tag[]>([]);
   useEffect(() => {
     if (user) {
-      axios.post("http://localhost:3000/api/tags").then((res) => {
+      axios.post("/api/tags").then((res) => {
         setTags(res.data);
       }).catch((err) => {
         console.error(err);
@@ -81,18 +81,17 @@ const EditOrganization = (): JSX.Element => {
     e.preventDefault();
     
     // Create a new organization, attach the creator as a member
-    axios.post("http://localhost:3000/api/organizations/create/", {
-      oid: id,
+    axios.put("/api/organizations/" + id, {
       name: editOrgName,
       description: editOrgDescription,
     });
 
-    router.push("/organizations");
+    router.push("/dashboard");
   };
 
   return (
     <>
-      <Header user={user} back={"/organizations"} />
+      <Header user={user} back={null} />
 
       <div className={styles.mainContent}>
         <div className={styles.addOrgBox}>

@@ -7,6 +7,7 @@ export interface Event {
     start: string;
     end: string;
     oid: string;
+    host_name: string;
     tags: any;
 }
 
@@ -41,6 +42,6 @@ export interface User {
 
 // Expected database schema
 export interface Tag {
-    tid: string;
+    id: string;
     name: string;
 }
