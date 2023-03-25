@@ -132,7 +132,6 @@ const CreateEvent = (): JSX.Element => {
       oid: newEventOID,
       tags: newEventTags,
       uid: user?.uid
-      uid: user?.uid
     });
 
     router.push("/dashboard");

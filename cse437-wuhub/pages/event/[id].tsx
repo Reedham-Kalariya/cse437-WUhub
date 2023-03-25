@@ -43,8 +43,6 @@ const SingleEventPage = (): JSX.Element => {
         }
     }, [auth]);
 
-    const router = useRouter();
-
     // Get event
     const [event, setEvent] = useState<Event>();
     useEffect(() => {
